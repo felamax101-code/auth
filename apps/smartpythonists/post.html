@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartPythonists — Post</title>
+<link rel="stylesheet" href="style.css"/>
+<!-- marked.js for markdown rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+.post-header {
+  padding: 2.5rem 0 2rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.post-header__back {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.82rem; color: var(--text-mute); cursor: pointer;
+  margin-bottom: 1.25rem; transition: color var(--transition);
+}
+.post-header__back:hover { color: var(--accent-py); }
+.post-header__meta { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.post-header__title { margin-bottom: 1rem; font-size: clamp(1.6rem, 4vw, 2.6rem); }
+.post-header__info {
+  display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+  font-size: 0.83rem; color: var(--text-mute); font-family: var(--font-mono);
+}
+.post-header__info-item { display: flex; align-items: center; gap: 0.4rem; }
+.post-author-chip {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: rgba(59,159,88,0.07);
+  border: 1px solid rgba(59,159,88,0.15);
+  border-radius: 99px; padding: 0.3rem 0.75rem;
+  font-size: 0.8rem; color: var(--text-sec);
+}
+.post-author-chip__avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-py), var(--accent-cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-weight: 700; flex-shrink: 0;
+}
+
+/* Content */
+.post-content-wrap {
+  padding: 2.5rem 0;
+  max-width: 760px;
+}
+.post-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1.5rem 0; }
+.post-tag {
+  padding: 0.3rem 0.7rem; background: rgba(0,212,255,0.06);
+  border: 1px solid rgba(0,212,255,0.15); border-radius: 99px;
+  font-size: 0.76rem; font-family: var(--font-mono); color: var(--accent-cyan);
+}
+
+/* Ad widget */
+.ad-widget {
+  background: linear-gradient(135deg, rgba(59,159,88,0.06), rgba(0,212,255,0.04));
+  border: 1px solid rgba(59,159,88,0.15);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin: 2rem 0;
+}
+.ad-widget__label {
+  font-size: 0.68rem; font-family: var(--font-mono); font-weight: 700;
+  color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+.ad-widget__title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.4rem; }
+.ad-widget__desc { font-size: 0.83rem; color: var(--text-sec); margin-bottom: 0.85rem; }
+
+/* Comments section */
+.comments-section { padding: 2rem 0; border-top: 1px solid var(--border); }
+.comments-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;
+}
+.comments-title { font-size: 1.2rem; font-family: var(--font-display); }
+
+/* Comment form */
+.comment-form {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.comment-form__header { display: flex; gap: 0.75rem; align-items: flex-start; }
+.comment-form__avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-py), var(--accent-gold));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; font-weight: 700; flex-shrink: 0; margin-top: 4px;
+}
+.comment-form__input-wrap { flex: 1; }
+.comment-form__textarea {
+  min-height: 80px;
+  transition: min-height 0.3s;
+}
+.comment-form__textarea:focus { min-height: 120px; }
+.comment-form__options { display: flex; gap: 1rem; margin-top: 0.75rem; flex-wrap: wrap; align-items: center; }
+.comment-form__check {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; color: var(--text-sec); cursor: pointer; user-select: none;
+}
+.comment-form__check input { width: auto; }
+.comment-form__actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; justify-content: flex-end; }
+
+/* Reply form */
+.reply-form {
+  margin-top: 0.75rem;
+  border-left: 2px solid var(--accent-py);
+  padding-left: 1rem;
+  display: none;
+}
+.reply-form.open { display: block; animation: fadeUp 0.2s ease; }
+
+/* Comment card */
+.comment-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.comment-item { padding: 1rem 1.25rem; }
+.comment-item + .comment-item { border-top: 1px solid var(--border); }
+.comment__replies-wrap {
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid var(--border);
+  padding: 0.5rem 0.5rem 0.5rem 2rem;
+}
+
+/* Post admin bar */
+.post-admin-bar {
+  display: flex; gap: 0.5rem; padding: 0.75rem 0;
+  border-top: 1px solid var(--border); margin-top: 1rem; flex-wrap: wrap;
+}
+
+/* Sticky TOC */
+.toc-widget { position: sticky; top: 80px; }
+.toc-list { list-style: none; display: flex; flex-direction: column; gap: 0.25rem; }
+.toc-item {
+  font-size: 0.82rem; color: var(--text-mute);
+  padding: 0.3rem 0.5rem; border-radius: var(--radius-sm);
+  cursor: pointer; transition: color var(--transition);
+  border-left: 2px solid transparent;
+}
+.toc-item:hover, .toc-item--active { color: var(--accent-py); border-left-color: var(--accent-py); }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container navbar__inner">
+    <a href="index.html" class="navbar__logo">🐍 Smart<span>Pythonists</span></a>
+    <div class="navbar__links">
+      <a class="navbar__link" href="index.html">Feed</a>
+      <a class="navbar__link" href="resources.html">Resources</a>
+      <a class="navbar__link" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="navbar__actions">
+      <a class="navbar__notif hidden" id="notifBtn" href="notifications.html">🔔<span class="notif-badge hidden" id="notifCount">0</span></a>
+      <div style="position:relative">
+        <div class="navbar__avatar" id="avatarBtn" onclick="toggleDropdown()">?</div>
+        <div class="dropdown" id="userDropdown">
+          <div class="dropdown__item" onclick="window.location.href='profile.html'">⚙ Profile</div>
+          <div class="dropdown__divider"></div>
+          <div class="dropdown__item dropdown__item--danger" onclick="doLogout()">↩ Sign Out</div>
+        </div>
+      </div>
+      <a class="btn btn--primary btn--sm hidden" id="loginNavBtn" href="auth.html">Sign In</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding-top:2rem;padding-bottom:4rem">
+
+  <div class="layout-with-sidebar">
+    <!-- ── MAIN POST CONTENT ── -->
+    <div>
+      <!-- Loading state -->
+      <div id="postLoading" class="loading-overlay"><div class="spinner"></div></div>
+
+      <!-- Post content (hidden until loaded) -->
+      <div id="postContent" class="hidden">
+
+        <!-- Header -->
+        <div class="post-header">
+          <div class="post-header__back" onclick="history.back()">← Back to Feed</div>
+          <div class="post-header__meta" id="postMeta"></div>
+          <h1 class="post-header__title" id="postTitle"></h1>
+          <div class="post-header__info">
+            <div id="postAuthorChip"></div>
+            <span class="post-header__info-item">👁 <span id="postViews">0</span> views</span>
+            <span class="post-header__info-item">💬 <span id="postCommentCount">0</span> comments</span>
+            <span class="post-header__info-item" id="postDate"></span>
+          </div>
+          <!-- Admin actions -->
+          <div class="post-admin-bar hidden" id="postAdminBar">
+            <button class="btn btn--secondary btn--sm" onclick="openEditPost()">✏️ Edit</button>
+            <button class="btn btn--danger btn--sm" onclick="doDeletePost()">🗑 Delete</button>
+          </div>
+        </div>
+
+        <!-- Post body -->
+        <div class="post-content-wrap">
+          <div class="md-content" id="postBody"></div>
+          <div class="post-tags" id="postTags"></div>
+          <!-- Ads -->
+          <div id="postAds"></div>
+        </div>
+
+        <!-- Comments section -->
+        <div class="comments-section" id="commentsSection">
+          <div class="comments-header">
+            <h2 class="comments-title">💬 Discussion <span id="commentCountBadge" style="font-size:0.9rem;color:var(--text-mute)"></span></h2>
+            <div style="display:flex;gap:0.5rem">
+              <button class="btn btn--ghost btn--sm" onclick="filterComments('all')" id="filterAll">All</button>
+              <button class="btn btn--ghost btn--sm" onclick="filterComments('questions')" id="filterQ">❓ Questions</button>
+            </div>
+          </div>
+
+          <!-- Comment form -->
+          <div id="commentFormWrap">
+            <div class="comment-form" id="mainCommentForm">
+              <div class="comment-form__header">
+                <div class="comment-form__avatar" id="commentFormAvatar">?</div>
+                <div class="comment-form__input-wrap">
+                  <textarea class="comment-form__textarea" id="commentText" placeholder="Share your thoughts, ask a question, or help someone out... 🐍"></textarea>
+                  <div class="comment-form__options">
+                    <label class="comment-form__check"><input type="checkbox" id="commentIsQuestion"/> ❓ Mark as Question</label>
+                  </div>
+                  <div class="comment-form__actions">
+                    <button class="btn btn--primary btn--sm" onclick="doComment()">Post Comment</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Login prompt for guests -->
+          <div class="card hidden" id="loginPromptComment" style="text-align:center;padding:1.5rem">
+            <p style="color:var(--text-sec);margin-bottom:1rem">Join the discussion — sign in to comment</p>
+            <a href="auth.html" class="btn btn--primary">Sign In to Comment</a>
+          </div>
+
+          <!-- Comments list -->
+          <div id="commentsList"></div>
+        </div>
+      </div><!-- /postContent -->
+    </div>
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="sidebar">
+      <!-- Related posts: skip, replaced by TOC -->
+      <div class="card toc-widget" id="tocWidget">
+        <div class="sidebar-widget__title">📑 Contents</div>
+        <ul class="toc-list" id="tocList"></ul>
+      </div>
+
+      <!-- Resources widget -->
+      <div class="card" id="resourcesWidget">
+        <div class="sidebar-widget__title">🔗 Related Resources</div>
+        <div id="resourcesList" style="display:flex;flex-direction:column;gap:0.6rem"></div>
+      </div>
+
+      <!-- Progress update widget -->
+      <div class="card hidden" id="progressUpdateWidget">
+        <div class="sidebar-widget__title">📈 Mark Skill</div>
+        <p style="font-size:0.82rem;color:var(--text-sec);margin-bottom:0.75rem">Update your proficiency for this topic</p>
+        <select id="skillLevelSelect" style="margin-bottom:0.75rem">
+          <option value="beginner">🟢 Beginner</option>
+          <option value="intermediate">🟡 Intermediate</option>
+          <option value="advanced">🔴 Advanced</option>
+        </select>
+        <button class="btn btn--primary btn--full btn--sm" onclick="doMarkSkill()">Mark as Learned ✓</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Edit Post Modal -->
+<div class="modal-overlay" id="editPostModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">✏️ Edit Post</h3>
+      <button class="modal__close" onclick="closeModal('editPostModal')">✕</button>
+    </div>
+    <div class="auth-form__stack">
+      <div class="form-group"><label class="form-label">Title</label><input type="text" id="edit-title"/></div>
+      <div class="form-group"><label class="form-label">Excerpt</label><input type="text" id="edit-excerpt"/></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Topic</label>
+          <select id="edit-topic"><option value="serializers">Serializers</option><option value="views">Views & ViewSets</option><option value="authentication">Authentication</option><option value="permissions">Permissions</option><option value="pagination">Pagination</option><option value="filtering">Filtering</option><option value="validation">Validation</option><option value="advanced">Advanced</option><option value="best_practices">Best Practices</option><option value="troubleshooting">Troubleshooting</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Difficulty</label>
+          <select id="edit-difficulty"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Content (Markdown)</label><textarea id="edit-content" style="min-height:200px"></textarea></div>
+      <button class="btn btn--primary btn--full" onclick="doEditPost()">Save Changes ✓</button>
+    </div>
+  </div>
+</div>
+
+<script src="sp_core.js"></script>
+<script>
+const postId = new URLSearchParams(location.search).get('id');
+let postData = null;
+let allComments = [];
+
+if (!postId) { SP.toast('No post ID','error'); setTimeout(()=>location.href='index.html',1500); }
+
+// Navbar
+(function() {
+  if (SP.Auth.isLoggedIn()) {
+    const u = SP.Auth.getUser();
+    document.getElementById('avatarBtn').textContent = (u?.username||'U')[0].toUpperCase();
+    document.getElementById('notifBtn').classList.remove('hidden');
+    document.getElementById('commentFormAvatar').textContent = (u?.username||'U')[0].toUpperCase();
+    document.getElementById('mainCommentForm').classList.remove('hidden');
+    document.getElementById('loginPromptComment').classList.add('hidden');
+    if (SP.Auth.isStaff()) document.getElementById('progressUpdateWidget').classList.remove('hidden');
+  } else {
+    document.getElementById('avatarBtn').classList.add('hidden');
+    document.getElementById('loginNavBtn').classList.remove('hidden');
+    document.getElementById('mainCommentForm').classList.add('hidden');
+    document.getElementById('loginPromptComment').classList.remove('hidden');
+  }
+})();
+
+// ─── Load Post ─────────────────────────────────────────────
+async function loadPost() {
+  const {ok, data} = await SP.PostAPI.detail(postId);
+  document.getElementById('postLoading').classList.add('hidden');
+  if (!ok) { SP.toast('Post not found','error'); return; }
+
+  postData = data;
+  document.title = `${data.title} — SmartPythonists`;
+  document.getElementById('postContent').classList.remove('hidden');
+
+  // Meta
+  document.getElementById('postMeta').innerHTML = `${SP.difficultyBadge(data.difficulty)}<span class="badge badge--topic">${SP.topicIcon(data.topic)} ${data.topic.replace('_',' ')}</span>`;
+  document.getElementById('postTitle').textContent = data.title;
+  document.getElementById('postViews').textContent = data.views_count;
+  document.getElementById('postCommentCount').textContent = data.comments_count;
+  document.getElementById('postDate').textContent = `📅 ${SP.timeAgo(data.published_at)}`;
+  document.getElementById('postAuthorChip').innerHTML = `<div class="post-author-chip"><div class="post-author-chip__avatar">${(data.author.username||'?')[0].toUpperCase()}</div>${data.author.username}</div>`;
+
+  // Admin bar
+  if (data.user_can_edit || SP.Auth.isStaff()) {
+    document.getElementById('postAdminBar').classList.remove('hidden');
+  }
+
+  // Body (markdown)
+  if (typeof marked !== 'undefined') {
+    marked.setOptions({ breaks: true, gfm: true });
+    document.getElementById('postBody').innerHTML = marked.parse(data.content || '');
+    // Syntax highlight code blocks
+    document.querySelectorAll('#postBody pre code').forEach(el => {
+      el.parentElement.classList.add('code-block');
+    });
+  } else {
+    document.getElementById('postBody').innerHTML = `<pre style="white-space:pre-wrap">${data.content}</pre>`;
+  }
+
+  // Tags
+  if (data.tags) {
+    document.getElementById('postTags').innerHTML = data.tags.split(',').map(t=>`<span class="post-tag">${t.trim()}</span>`).join('');
+  }
+
+  // Ads
+  if (data.ads && data.ads.length) {
+    document.getElementById('postAds').innerHTML = data.ads.map(ad=>`
+      <div class="ad-widget">
+        <div class="ad-widget__label">Sponsored Resource</div>
+        <div class="ad-widget__title">${ad.title}</div>
+        <div class="ad-widget__desc">${ad.description}</div>
+        <a class="btn btn--gold btn--sm" href="${ad.url}" target="_blank" onclick="trackAdClick('${ad.id}')">${ad.cta_text} →</a>
+      </div>
+    `).join('');
+  }
+
+  // Build TOC
+  buildTOC();
+
+  // Resources
+  loadResources(data.topic);
+
+  // Progress widget topic
+  document.getElementById('skillLevelSelect').dataset.topic = data.topic;
+
+  // Comments
+  allComments = data.top_comments || [];
+  renderComments(allComments);
+  document.getElementById('commentCountBadge').textContent = `(${data.comments_count})`;
+}
+
+function buildTOC() {
+  const headings = document.querySelectorAll('#postBody h1,#postBody h2,#postBody h3');
+  const tocList  = document.getElementById('tocList');
+  if (!headings.length) { document.getElementById('tocWidget').classList.add('hidden'); return; }
+  headings.forEach((h, i) => {
+    h.id = `heading-${i}`;
+    const li = document.createElement('li');
+    li.className = `toc-item${h.tagName === 'H3' ? ' ' : ''}`;
+    li.style.paddingLeft = h.tagName === 'H3' ? '1.5rem' : h.tagName === 'H2' ? '0.75rem' : '0';
+    li.textContent = h.textContent;
+    li.onclick = () => h.scrollIntoView({behavior:'smooth'});
+    tocList.appendChild(li);
+  });
+}
+
+async function loadResources(topic) {
+  const {ok,data} = await SP.ResourceAPI.byTopic(topic);
+  const container = document.getElementById('resourcesList');
+  if (!ok || !data.resources?.length) { document.getElementById('resourcesWidget').classList.add('hidden'); return; }
+  container.innerHTML = data.resources.slice(0,5).map(r => `
+    <a href="${r.url}" target="_blank" style="display:flex;gap:0.6rem;align-items:flex-start;padding:0.6rem;border-radius:var(--radius-md);background:var(--bg-hover);text-decoration:none;transition:all var(--transition)">
+      <span style="font-size:1rem;flex-shrink:0">${{youtube:'▶',documentation:'📖',course:'🎓',book:'📚',article:'📝',github:'💻',tool:'🔧'}[r.resource_type]||'🔗'}</span>
+      <div>
+        <div style="font-size:0.83rem;font-weight:600;color:var(--text-prime);margin-bottom:0.15rem;line-height:1.3">${r.title}</div>
+        <div style="font-size:0.73rem;color:var(--text-mute);font-family:var(--font-mono)">${r.resource_type}${r.is_free?' · Free':''}</div>
+      </div>
+    </a>
+  `).join('');
+}
+
+// ─── Comments ──────────────────────────────────────────────
+function renderComments(comments) {
+  const container = document.getElementById('commentsList');
+  if (!comments.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-state__icon">💬</div><p class="empty-state__text">No comments yet. Be the first to start the discussion!</p></div>';
+    return;
+  }
+  container.innerHTML = comments.map(c => buildCommentHTML(c)).join('');
+}
+
+function buildCommentHTML(c, isReply = false) {
+  const replies = c.replies || [];
+  const replyHTML = replies.map(r => buildCommentHTML(r, true)).join('');
+  const pinnedClass = c.is_pinned ? 'comment--pinned' : '';
+  const qClass = c.is_question ? 'comment--question' : c.is_answer ? 'comment--answer' : '';
+
+  return `
+    <div class="comment-card ${isReply?'comment-reply-card':''}">
+      <div class="comment-item ${pinnedClass} ${qClass}" id="comment-${c.id}">
+        <div class="comment__header">
+          <div class="comment__avatar">${(c.author.username||'?')[0].toUpperCase()}</div>
+          <span class="comment__author">${c.author.username}</span>
+          ${c.author.role === 'admin' ? '<span class="badge badge--new" style="font-size:0.65rem">Admin</span>' : ''}
+          <span class="comment__time">${SP.timeAgo(c.created_at)}${c.is_edited?' · edited':''}</span>
+          ${c.is_pinned ? '<span class="badge badge--topic" style="font-size:0.65rem">📌 Pinned</span>' : ''}
+        </div>
+        <div class="comment__body">${escapeHtml(c.content)}</div>
+        <div class="comment__actions">
+          <span class="comment__action ${c.user_liked?'comment__action--liked':''}" onclick="toggleLike('${c.id}','${postId}',this)">
+            ❤ <span class="like-count">${c.likes_count}</span>
+          </span>
+          ${SP.Auth.isLoggedIn() ? `<span class="comment__action" onclick="toggleReplyForm('reply-${c.id}')">↩ Reply</span>` : ''}
+          ${canEditComment(c) ? `<span class="comment__action" onclick="openEditComment('${c.id}','${escapeHtml(c.content).replace(/'/g,"\\'")}')">✏ Edit</span>` : ''}
+          ${canDeleteComment(c) ? `<span class="comment__action" style="color:var(--accent-red)" onclick="doDeleteComment('${c.id}')">🗑 Delete</span>` : ''}
+        </div>
+        <!-- Reply form -->
+        <div class="reply-form" id="reply-${c.id}">
+          <textarea class="comment-form__textarea" id="replyText-${c.id}" placeholder="Write your reply..." style="min-height:70px;margin-bottom:0.5rem"></textarea>
+          <div style="display:flex;gap:0.5rem">
+            <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;color:var(--text-sec)"><input type="checkbox" id="replyIsAnswer-${c.id}" style="width:auto"/> ✅ Mark as Answer</label>
+          </div>
+          <div style="display:flex;gap:0.5rem;margin-top:0.5rem;justify-content:flex-end">
+            <button class="btn btn--ghost btn--sm" onclick="toggleReplyForm('reply-${c.id}')">Cancel</button>
+            <button class="btn btn--primary btn--sm" onclick="doReply('${c.id}')">Post Reply</button>
+          </div>
+        </div>
+      </div>
+      ${replies.length ? `<div class="comment__replies-wrap">${replyHTML}</div>` : ''}
+    </div>
+  `;
+}
+
+function canEditComment(c) {
+  const user = SP.Auth.getUser();
+  return user && (c.author.id === user.id || SP.Auth.isStaff());
+}
+function canDeleteComment(c) { return canEditComment(c); }
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleReplyForm(id) {
+  const form = document.getElementById(id);
+  if (form) form.classList.toggle('open');
+}
+
+function filterComments(mode) {
+  document.getElementById('filterAll').className = `btn btn--ghost btn--sm${mode==='all'?' btn--secondary':''}`;
+  document.getElementById('filterQ').className   = `btn btn--ghost btn--sm${mode==='questions'?' btn--secondary':''}`;
+  const filtered = mode === 'questions' ? allComments.filter(c=>c.is_question) : allComments;
+  renderComments(filtered);
+}
+
+async function doComment() {
+  const text = document.getElementById('commentText').value.trim();
+  const isQ  = document.getElementById('commentIsQuestion').checked;
+  if (!text) return SP.toast('Write something first','warning');
+  const {ok,data} = await SP.CommentAPI.create(postId, {content:text, is_question:isQ});
+  if (ok) {
+    document.getElementById('commentText').value = '';
+    document.getElementById('commentIsQuestion').checked = false;
+    SP.toast('Comment posted! 💬','success');
+    await reloadComments();
+  } else SP.toast(SP.extractErrors(data),'error');
+}
+
+async function doReply(parentId) {
+  const text = document.getElementById(`replyText-${parentId}`).value.trim();
+  const isAnswer = document.getElementById(`replyIsAnswer-${parentId}`).checked;
+  if (!text) return SP.toast('Write your reply','warning');
+  const {ok,data} = await SP.CommentAPI.create(postId, {content:text, parent_comment:parentId, is_answer:isAnswer});
+  if (ok) {
+    SP.toast('Reply posted! ↩','success');
+    await reloadComments();
+  } else SP.toast(SP.extractErrors(data),'error');
+}
+
+async function toggleLike(commentId, pid, el) {
+  if (!SP.Auth.isLoggedIn()) { SP.toast('Sign in to like comments','warning'); return; }
+  const isLiked = el.classList.contains('comment__action--liked');
+  const {ok,data} = isLiked
+    ? await SP.CommentAPI.unlike(pid, commentId)
+    : await SP.CommentAPI.like(pid, commentId);
+  if (ok) {
+    el.classList.toggle('comment__action--liked');
+    const cnt = el.querySelector('.like-count');
+    cnt.textContent = parseInt(cnt.textContent) + (isLiked ? -1 : 1);
+  }
+}
+
+async function doDeleteComment(cid) {
+  if (!confirm('Delete this comment?')) return;
+  const {ok} = await SP.CommentAPI.delete(postId, cid);
+  if (ok) { SP.toast('Deleted','success'); await reloadComments(); }
+  else SP.toast('Failed to delete','error');
+}
+
+function openEditComment(cid, content) {
+  const newContent = prompt('Edit your comment:', content.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>'));
+  if (newContent !== null && newContent.trim()) doEditComment(cid, newContent.trim());
+}
+async function doEditComment(cid, content) {
+  const {ok,data} = await SP.CommentAPI.update(postId, cid, {content});
+  if (ok) { SP.toast('Comment updated','success'); await reloadComments(); }
+  else SP.toast(SP.extractErrors(data),'error');
+}
+
+async function reloadComments() {
+  const {ok,data} = await SP.CommentAPI.list(postId);
+  if (ok) {
+    allComments = data.comments || [];
+    renderComments(allComments);
+    document.getElementById('commentCountBadge').textContent = `(${data.total_comments})`;
+    document.getElementById('postCommentCount').textContent = data.total_comments;
+  }
+}
+
+// ─── Edit Post (admin) ────────────────────────────────────
+function openEditPost() {
+  if (!postData) return;
+  document.getElementById('edit-title').value = postData.title;
+  document.getElementById('edit-excerpt').value = postData.excerpt || '';
+  document.getElementById('edit-content').value = postData.content;
+  document.getElementById('edit-topic').value = postData.topic;
+  document.getElementById('edit-difficulty').value = postData.difficulty;
+  openModal('editPostModal');
+}
+async function doEditPost() {
+  const payload = {
+    title: document.getElementById('edit-title').value.trim(),
+    excerpt: document.getElementById('edit-excerpt').value.trim(),
+    content: document.getElementById('edit-content').value.trim(),
+    topic: document.getElementById('edit-topic').value,
+    difficulty: document.getElementById('edit-difficulty').value,
+  };
+  const {ok,data} = await SP.PostAPI.update(postId, payload);
+  if (ok) { SP.toast('Post updated','success'); closeModal('editPostModal'); loadPost(); }
+  else SP.toast(SP.extractErrors(data),'error');
+}
+async function doDeletePost() {
+  if (!confirm('Delete this post permanently?')) return;
+  const {ok} = await SP.PostAPI.delete(postId);
+  if (ok) { SP.toast('Post deleted','success'); setTimeout(()=>location.href='index.html',1000); }
+  else SP.toast('Failed to delete','error');
+}
+
+// ─── Skill marking ────────────────────────────────────────
+async function doMarkSkill() {
+  const level = document.getElementById('skillLevelSelect').value;
+  const topic = document.getElementById('skillLevelSelect').dataset.topic;
+  const {ok,data} = await SP.ProgressAPI.update({topic, level});
+  if (ok) SP.toast(`✓ ${topic} marked as ${level}!`,'success');
+  else SP.toast(SP.extractErrors(data),'error');
+}
+
+// ─── Ad tracking ──────────────────────────────────────────
+async function trackAdClick(adId) {
+  await fetch(`${window.SP_BASE}/api/ads/click/`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ad_id: adId})
+  }).catch(()=>{});
+}
+
+// ─── Modal helpers ─────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+
+// Dropdown
+function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('#avatarBtn') && !e.target.closest('#userDropdown')) document.getElementById('userDropdown')?.classList.remove('open'); });
+
+async function doLogout() { const r = SP.Auth.getRefresh(); await SP.UserAPI.logout({refresh:r}); SP.Auth.clear(); window.location.href='auth.html'; }
+
+// ─── Init ─────────────────────────────────────────────────
+loadPost();
+</script>
+</body>
+</html>

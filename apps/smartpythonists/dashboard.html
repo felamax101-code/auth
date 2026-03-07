@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartPythonists — Dashboard</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.dash-header {
+  padding: 2.5rem 0 2rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.dash-header__bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(59,159,88,0.04), rgba(0,212,255,0.03));
+  pointer-events: none;
+}
+.dash-welcome { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.dash-welcome__avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-py), var(--accent-cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 700; font-family: var(--font-display);
+  flex-shrink: 0;
+}
+.dash-welcome__info { flex: 1; }
+.dash-welcome__greeting { font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-mute); margin-bottom: 0.25rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.dash-welcome__name { font-size: 1.8rem; font-family: var(--font-display); font-weight: 800; }
+.dash-welcome__role { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.3rem; font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-sec); }
+
+/* Stats row */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin: 2rem 0; }
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition);
+}
+.stat-card:hover { border-color: rgba(59,159,88,0.2); transform: translateY(-2px); }
+.stat-card__icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+.stat-card__value {
+  font-family: var(--font-mono); font-size: 2rem; font-weight: 700;
+  color: var(--text-prime); line-height: 1; margin-bottom: 0.25rem;
+}
+.stat-card__label { font-size: 0.78rem; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.08em; }
+.stat-card__glow {
+  position: absolute; bottom: 0; right: 0;
+  width: 80px; height: 80px;
+  border-radius: 50%; opacity: 0.08;
+  background: var(--accent-py);
+  transform: translate(25%, 25%);
+}
+
+/* Topics progress grid */
+.topics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+.topic-progress-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  transition: all var(--transition);
+}
+.topic-progress-card:hover { border-color: rgba(59,159,88,0.25); }
+.topic-progress-card__header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+.topic-progress-card__icon { font-size: 1.2rem; }
+.topic-progress-card__name { font-weight: 600; font-size: 0.88rem; flex: 1; }
+.topic-progress-card__level { font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-mute); }
+.topic-progress-card__actions { display: flex; gap: 0.35rem; margin-top: 0.6rem; }
+.level-btn {
+  flex: 1; padding: 0.3rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem; font-weight: 600;
+  font-family: var(--font-mono);
+  border: 1px solid var(--border);
+  background: var(--bg-hover); color: var(--text-mute);
+  cursor: pointer; transition: all var(--transition);
+}
+.level-btn:hover { border-color: var(--accent-py); color: var(--text-prime); }
+.level-btn--beginner.active     { background: rgba(59,159,88,0.15); border-color: var(--accent-py); color: var(--accent-py); }
+.level-btn--intermediate.active { background: rgba(240,180,41,0.15); border-color: var(--accent-gold); color: var(--accent-gold); }
+.level-btn--advanced.active     { background: rgba(255,59,59,0.15); border-color: var(--accent-red); color: var(--accent-red); }
+
+/* Dashboard tabs */
+.dash-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); margin: 2rem 0 1.5rem; }
+.dash-tab {
+  padding: 0.65rem 1.25rem; font-size: 0.88rem; font-weight: 600;
+  color: var(--text-mute); cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: all var(--transition);
+}
+.dash-tab:hover { color: var(--text-prime); }
+.dash-tab--active { color: var(--accent-py); border-bottom-color: var(--accent-py); }
+
+.dash-tab-content { display: none; animation: fadeUp 0.3s ease; }
+.dash-tab-content--active { display: block; }
+
+/* Notification items */
+.notif-item {
+  display: flex; gap: 0.85rem; align-items: flex-start;
+  padding: 1rem 0; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background var(--transition);
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: var(--bg-hover); margin: 0 -1rem; padding-left: 1rem; padding-right: 1rem; border-radius: var(--radius-md); }
+.notif-item--unread .notif-item__title { color: var(--text-prime); }
+.notif-item__icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+.notif-item__body { flex: 1; }
+.notif-item__title { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.2rem; color: var(--text-sec); }
+.notif-item__desc { font-size: 0.78rem; color: var(--text-mute); }
+.notif-item__time { font-size: 0.72rem; color: var(--text-mute); font-family: var(--font-mono); flex-shrink: 0; }
+.notif-unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-py); flex-shrink: 0; margin-top: 6px; }
+
+/* Security tab */
+.security-section { display: flex; flex-direction: column; gap: 1rem; }
+.security-card {
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.25rem;
+}
+.security-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+.security-card__title { font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
+
+/* Reputation bar */
+.rep-bar {
+  background: var(--bg-deep); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.25rem;
+  display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+}
+.rep-badge {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-gold), #f5a623);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; flex-shrink: 0;
+}
+.rep-info { flex: 1; }
+.rep-value { font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--accent-gold); }
+.rep-label { font-size: 0.78rem; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.08em; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container navbar__inner">
+    <a href="index.html" class="navbar__logo">🐍 Smart<span>Pythonists</span></a>
+    <div class="navbar__links">
+      <a class="navbar__link" href="index.html">Feed</a>
+      <a class="navbar__link" href="resources.html">Resources</a>
+      <a class="navbar__link navbar__link--active" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="navbar__actions">
+      <a class="navbar__notif" href="notifications.html">🔔<span class="notif-badge hidden" id="notifCount">0</span></a>
+      <div style="position:relative">
+        <div class="navbar__avatar" id="avatarBtn" onclick="toggleDropdown()">?</div>
+        <div class="dropdown" id="userDropdown">
+          <div class="dropdown__item" onclick="window.location.href='profile.html'">⚙ Profile</div>
+          <div class="dropdown__divider"></div>
+          <div class="dropdown__item dropdown__item--danger" onclick="doLogout()">↩ Sign Out</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding-bottom:4rem">
+
+  <!-- Header -->
+  <div class="dash-header">
+    <div class="dash-header__bg"></div>
+    <div class="dash-welcome" id="dashWelcome">
+      <div class="dash-welcome__avatar" id="dashAvatar">?</div>
+      <div class="dash-welcome__info">
+        <div class="dash-welcome__greeting">Welcome back 🐍</div>
+        <div class="dash-welcome__name" id="dashName">Loading...</div>
+        <div class="dash-welcome__role" id="dashRole"></div>
+      </div>
+      <a href="profile.html" class="btn btn--secondary btn--sm">⚙ Edit Profile</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><div class="stat-card__icon">📖</div><div class="stat-card__value" id="stat-posts">—</div><div class="stat-card__label">Posts Read</div><div class="stat-card__glow"></div></div>
+    <div class="stat-card"><div class="stat-card__icon">💬</div><div class="stat-card__value" id="stat-comments">—</div><div class="stat-card__label">Comments</div><div class="stat-card__glow" style="background:var(--accent-cyan)"></div></div>
+    <div class="stat-card"><div class="stat-card__icon">❓</div><div class="stat-card__value" id="stat-questions">—</div><div class="stat-card__label">Questions</div><div class="stat-card__glow" style="background:var(--accent-gold)"></div></div>
+    <div class="stat-card"><div class="stat-card__icon">✅</div><div class="stat-card__value" id="stat-answers">—</div><div class="stat-card__label">Answers</div><div class="stat-card__glow" style="background:var(--accent-py)"></div></div>
+  </div>
+
+  <!-- Reputation -->
+  <div class="rep-bar" id="repBar">
+    <div class="rep-badge">🏆</div>
+    <div class="rep-info">
+      <div class="rep-value" id="repValue">0</div>
+      <div class="rep-label">Reputation Points</div>
+    </div>
+    <div style="flex:1;max-width:300px">
+      <div style="font-size:0.78rem;color:var(--text-mute);margin-bottom:0.4rem;font-family:var(--font-mono)">Next level: 500 pts</div>
+      <div class="progress-bar"><div class="progress-bar__fill" id="repProgressBar" style="width:0%"></div></div>
+    </div>
+    <div>
+      <span class="badge badge--intermediate" id="overallLevel">beginner</span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="dash-tabs">
+    <div class="dash-tab dash-tab--active" onclick="switchTab('progress')">📈 Progress</div>
+    <div class="dash-tab" onclick="switchTab('notifications')">🔔 Notifications</div>
+    <div class="dash-tab" onclick="switchTab('security')">🔐 Security</div>
+  </div>
+
+  <!-- PROGRESS TAB -->
+  <div class="dash-tab-content dash-tab-content--active" id="tab-progress">
+    <h3 style="margin-bottom:1.25rem;font-family:var(--font-display)">🗺 Your Learning Map</h3>
+    <div class="topics-grid" id="topicsGrid">
+      <div class="loading-overlay"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS TAB -->
+  <div class="dash-tab-content" id="tab-notifications">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">
+      <h3 style="font-family:var(--font-display)">🔔 Notifications</h3>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn--secondary btn--sm" onclick="markAllRead()">✓ Mark All Read</button>
+        <button class="btn btn--ghost btn--sm" onclick="loadNotifications('unread')">Unread only</button>
+        <button class="btn btn--ghost btn--sm" onclick="loadNotifications()">All</button>
+      </div>
+    </div>
+    <div class="card" id="notifList" style="padding:0 1rem"></div>
+  </div>
+
+  <!-- SECURITY TAB -->
+  <div class="dash-tab-content" id="tab-security">
+    <div class="security-section">
+      <!-- Change password -->
+      <div class="security-card">
+        <div class="security-card__header">
+          <div class="security-card__title">🔑 Change Password</div>
+        </div>
+        <div class="auth-form__stack" style="max-width:420px">
+          <div class="form-group"><label class="form-label">Current Password</label><div class="input-wrap"><input type="password" id="cur-pw" placeholder="Current password"/><span class="pw-eye" onclick="togglePw('cur-pw',this)">👁</span></div></div>
+          <div class="form-group"><label class="form-label">New Password</label><div class="input-wrap"><input type="password" id="new-pw" placeholder="New password" oninput="checkStrength(this.value,'pw-meter2')"/><span class="pw-eye" onclick="togglePw('new-pw',this)">👁</span></div><div class="pw-meter" id="pw-meter2"><div class="pw-meter__bar"></div><div class="pw-meter__bar"></div><div class="pw-meter__bar"></div><div class="pw-meter__bar"></div></div></div>
+          <div class="form-group"><label class="form-label">Confirm New Password</label><div class="input-wrap"><input type="password" id="conf-pw" placeholder="Confirm new password"/><span class="pw-eye" onclick="togglePw('conf-pw',this)">👁</span></div></div>
+          <button class="btn btn--primary" onclick="doChangePassword()">Update Password →</button>
+        </div>
+      </div>
+
+      <!-- Logout all devices -->
+      <div class="security-card">
+        <div class="security-card__header">
+          <div class="security-card__title">📱 Active Sessions</div>
+          <button class="btn btn--secondary btn--sm" onclick="doLogoutAll()">Sign Out All Devices</button>
+        </div>
+        <p style="font-size:0.85rem;color:var(--text-sec)">Sign out from all devices where you're currently logged in. Your current session will also be terminated.</p>
+      </div>
+
+      <!-- Delete account -->
+      <div class="security-card" style="border-color:rgba(255,59,59,0.2)">
+        <div class="security-card__header">
+          <div class="security-card__title" style="color:var(--accent-red)">⚠️ Danger Zone</div>
+        </div>
+        <p style="font-size:0.85rem;color:var(--text-sec);margin-bottom:1rem">Deleting your account is a soft delete — you can reactivate later. All your comments and progress will be preserved.</p>
+        <button class="btn btn--danger btn--sm" onclick="openDeleteAccount()">Delete Account</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title" style="color:var(--accent-red)">⚠️ Delete Account</h3>
+      <button class="modal__close" onclick="closeModal('deleteModal')">✕</button>
+    </div>
+    <p style="color:var(--text-sec);margin-bottom:1.25rem;font-size:0.9rem">This will deactivate your account. You can reactivate it later. Please confirm your password.</p>
+    <div class="auth-form__stack">
+      <div class="form-group"><label class="form-label">Password</label><input type="password" id="delete-pw" placeholder="Confirm your password"/></div>
+      <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--text-sec);cursor:pointer"><input type="checkbox" id="delete-confirm" style="width:auto"/>I understand this will deactivate my account</label>
+      <button class="btn btn--danger btn--full" onclick="doDeleteAccount()">Confirm Deletion</button>
+    </div>
+  </div>
+</div>
+
+<script src="sp_core.js"></script>
+<script>
+SP.requireAuth();
+
+const TOPICS = [
+  {id:'serializers',name:'Serializers'},{id:'views',name:'Views & ViewSets'},
+  {id:'authentication',name:'Authentication'},{id:'permissions',name:'Permissions'},
+  {id:'pagination',name:'Pagination'},{id:'filtering',name:'Filtering'},
+  {id:'validation',name:'Validation'},{id:'advanced',name:'Advanced'},
+  {id:'best_practices',name:'Best Practices'},{id:'troubleshooting',name:'Troubleshooting'}
+];
+
+let progressData = null;
+
+// ─── Init ─────────────────────────────────────────────────
+(async function init() {
+  setupNavbar();
+  await loadProfile();
+  await loadProgress();
+  await loadNotifications();
+})();
+
+function setupNavbar() {
+  if (SP.Auth.isLoggedIn()) {
+    const u = SP.Auth.getUser();
+    document.getElementById('avatarBtn').textContent = (u?.username||'U')[0].toUpperCase();
+    loadNotifCount();
+  }
+}
+async function loadNotifCount() {
+  const {ok,data} = await SP.NotifAPI.list({unread:'true'});
+  if (ok && data.unread_count > 0) { const b = document.getElementById('notifCount'); b.textContent=data.unread_count; b.classList.remove('hidden'); }
+}
+
+async function loadProfile() {
+  const {ok,data} = await SP.UserAPI.profile();
+  if (!ok) return;
+  const u = data;
+  document.getElementById('dashAvatar').textContent = (u.username||'U')[0].toUpperCase();
+  document.getElementById('dashName').textContent = u.username;
+  const roleEmojis = {customer:'🧑‍💻', staff:'⚙️', admin:'👑'};
+  document.getElementById('dashRole').innerHTML = `${roleEmojis[u.role]||'🐍'} ${u.role} · ${u.email}`;
+}
+
+async function loadProgress() {
+  const {ok,data} = await SP.ProgressAPI.get();
+  if (!ok) return;
+  progressData = data;
+
+  document.getElementById('stat-posts').textContent = data.posts_read;
+  document.getElementById('stat-comments').textContent = data.comments_made;
+  document.getElementById('stat-questions').textContent = data.questions_asked;
+  document.getElementById('stat-answers').textContent = data.answers_given;
+  document.getElementById('repValue').textContent = data.reputation;
+  const repPct = Math.min(100, (data.reputation / 500) * 100);
+  document.getElementById('repProgressBar').style.width = repPct + '%';
+  document.getElementById('overallLevel').textContent = data.overall_level;
+  document.getElementById('overallLevel').className = `badge badge--${data.overall_level}`;
+
+  renderTopicsGrid(data.learned_topics || []);
+}
+
+function renderTopicsGrid(learnedTopics) {
+  const learned = {};
+  learnedTopics.forEach(lt => { learned[lt.topic] = lt.level; });
+
+  document.getElementById('topicsGrid').innerHTML = TOPICS.map(t => `
+    <div class="topic-progress-card">
+      <div class="topic-progress-card__header">
+        <span class="topic-progress-card__icon">${SP.topicIcon(t.id)}</span>
+        <span class="topic-progress-card__name">${t.name}</span>
+        <span class="topic-progress-card__level">${learned[t.id] || 'not started'}</span>
+      </div>
+      <div class="progress-bar" style="margin-bottom:0.6rem">
+        <div class="progress-bar__fill" style="width:${levelPct(learned[t.id])}%;background:${levelColor(learned[t.id])}"></div>
+      </div>
+      <div class="topic-progress-card__actions">
+        <button class="level-btn level-btn--beginner ${learned[t.id]==='beginner'?'active':''}" onclick="markSkill('${t.id}','beginner',this)">🟢</button>
+        <button class="level-btn level-btn--intermediate ${learned[t.id]==='intermediate'?'active':''}" onclick="markSkill('${t.id}','intermediate',this)">🟡</button>
+        <button class="level-btn level-btn--advanced ${learned[t.id]==='advanced'?'active':''}" onclick="markSkill('${t.id}','advanced',this)">🔴</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function levelPct(l) { return {beginner:33, intermediate:66, advanced:100}[l] || 0; }
+function levelColor(l) { return {beginner:'var(--accent-py)', intermediate:'var(--accent-gold)', advanced:'var(--accent-red)'}[l] || 'var(--bg-hover)'; }
+
+async function markSkill(topic, level, btn) {
+  const {ok,data} = await SP.ProgressAPI.update({topic,level});
+  if (ok) { SP.toast(`${topic}: ${level} ✓`,'success'); await loadProgress(); }
+  else SP.toast(SP.extractErrors(data),'error');
+}
+
+// ─── Notifications ────────────────────────────────────────
+const notifIcons = {reply_to_comment:'↩', answer_to_question:'✅', mention:'@', new_post:'📚', post_update:'🔄'};
+async function loadNotifications(mode = '') {
+  const params = mode === 'unread' ? {unread:'true'} : {};
+  const {ok,data} = await SP.NotifAPI.list(params);
+  const container = document.getElementById('notifList');
+  if (!ok) { container.innerHTML = '<div class="empty-state"><div class="empty-state__icon">⚠️</div><p>Failed to load</p></div>'; return; }
+  if (!data.notifications.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-state__icon">🔔</div><p class="empty-state__text">No notifications yet.</p></div>';
+    return;
+  }
+  container.innerHTML = data.notifications.map(n => `
+    <div class="notif-item ${n.is_read?'':'notif-item--unread'}" onclick="viewNotif('${n.id}','${n.post}')">
+      <span class="notif-item__icon">${notifIcons[n.notification_type]||'🔔'}</span>
+      <div class="notif-item__body">
+        <div class="notif-item__title">${n.title}</div>
+        ${n.description ? `<div class="notif-item__desc">${n.description}</div>` : ''}
+        ${n.post_title ? `<div class="notif-item__desc" style="color:var(--accent-py)">📌 ${n.post_title}</div>` : ''}
+      </div>
+      ${!n.is_read ? '<div class="notif-unread-dot"></div>' : ''}
+      <span class="notif-item__time">${SP.timeAgo(n.created_at)}</span>
+    </div>
+  `).join('');
+}
+
+async function viewNotif(id, postId) {
+  await SP.NotifAPI.markRead({notification_ids:[id]});
+  if (postId && postId !== 'null') window.location.href = `post.html?id=${postId}`;
+  else loadNotifications();
+}
+
+async function markAllRead() {
+  const {ok} = await SP.NotifAPI.markRead({mark_all:true});
+  if (ok) { SP.toast('All notifications marked read ✓','success'); loadNotifications(); document.getElementById('notifCount').classList.add('hidden'); }
+}
+
+// ─── Security ─────────────────────────────────────────────
+function togglePw(id, el) {
+  const i = document.getElementById(id);
+  i.type = i.type === 'password' ? 'text' : 'password';
+  el.textContent = i.type === 'password' ? '👁' : '🙈';
+}
+function checkStrength(pw, meterId='pw-meter2') {
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  document.getElementById(meterId).className = `pw-meter pw-meter--${score}`;
+}
+async function doChangePassword() {
+  const cur = document.getElementById('cur-pw').value;
+  const nw  = document.getElementById('new-pw').value;
+  const cf  = document.getElementById('conf-pw').value;
+  if (!cur || !nw || !cf) return SP.toast('Fill all fields','warning');
+  if (nw !== cf) return SP.toast('New passwords do not match','error');
+  const {ok,data} = await SP.UserAPI.changePassword({current_password:cur, new_password:nw, new_password_confirm:cf});
+  if (ok) { SP.toast('Password updated! 🔑','success'); document.getElementById('cur-pw').value=''; document.getElementById('new-pw').value=''; document.getElementById('conf-pw').value=''; }
+  else SP.toast(SP.extractErrors(data),'error');
+}
+async function doLogoutAll() {
+  if (!confirm('Sign out from all devices?')) return;
+  const {ok} = await SP.UserAPI.logout({refresh: SP.Auth.getRefresh()});
+  SP.Auth.clear(); window.location.href='auth.html';
+}
+function openDeleteAccount() { openModal('deleteModal'); }
+async function doDeleteAccount() {
+  const pw = document.getElementById('delete-pw').value;
+  const confirmed = document.getElementById('delete-confirm').checked;
+  if (!pw) return SP.toast('Enter your password','warning');
+  if (!confirmed) return SP.toast('Please confirm deletion','warning');
+  const {ok,data} = await SP.UserAPI.deleteAccount({password:pw, confirm_deletion:true});
+  if (ok) { SP.toast('Account deactivated','success'); SP.Auth.clear(); setTimeout(()=>location.href='auth.html',1500); }
+  else SP.toast(SP.extractErrors(data),'error');
+}
+
+// ─── Tabs ──────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.dash-tab').forEach((t,i) => {
+    const names = ['progress','notifications','security'];
+    t.classList.toggle('dash-tab--active', names[i]===name);
+  });
+  document.querySelectorAll('.dash-tab-content').forEach(c => c.classList.remove('dash-tab-content--active'));
+  document.getElementById(`tab-${name}`).classList.add('dash-tab-content--active');
+  if (name==='notifications') loadNotifications();
+}
+
+// Modals / dropdown
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('#avatarBtn') && !e.target.closest('#userDropdown')) document.getElementById('userDropdown')?.classList.remove('open'); });
+async function doLogout() { await SP.UserAPI.logout({refresh:SP.Auth.getRefresh()}); SP.Auth.clear(); window.location.href='auth.html'; }
+</script>
+</body>
+</html>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartPythonists — Join the Community</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+  body { display: flex; min-height: 100vh; align-items: stretch; }
+  .auth-split { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; width: 100%; }
+  @media (max-width: 900px) { .auth-split { grid-template-columns: 1fr; } .auth-panel { display: none; } }
+
+  /* ── Left visual panel ── */
+  .auth-panel {
+    background  : var(--bg-deep);
+    border-right: 1px solid var(--border);
+    display     : flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding     : 3rem;
+    position    : relative;
+    overflow    : hidden;
+  }
+  .auth-panel__grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(59,159,88,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,159,88,0.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .auth-panel__logo {
+    font-family: var(--font-mono);
+    font-size  : 1.1rem;
+    font-weight: 700;
+    color      : var(--accent-py);
+    z-index    : 1;
+    display    : flex;
+    align-items: center;
+    gap        : 0.5rem;
+  }
+  .auth-panel__logo span { color: var(--accent-gold); }
+  .auth-panel__main { z-index: 1; }
+  .auth-panel__snake {
+    font-size  : 5rem;
+    line-height: 1;
+    filter     : drop-shadow(0 0 30px rgba(59,159,88,0.5));
+    animation  : float 4s ease-in-out infinite;
+    display    : block;
+    margin-bottom: 2rem;
+  }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  .auth-panel__tagline {
+    font-family: var(--font-display);
+    font-size  : 2rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.25rem;
+  }
+  .auth-panel__tagline em { color: var(--accent-py); font-style: normal; }
+  .auth-panel__features { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+  .auth-panel__feature {
+    display    : flex;
+    align-items: center;
+    gap        : 0.75rem;
+    font-size  : 0.88rem;
+    color      : var(--text-sec);
+  }
+  .auth-panel__feature-icon {
+    width: 28px; height: 28px;
+    border-radius: var(--radius-sm);
+    background: rgba(59,159,88,0.1);
+    border: 1px solid rgba(59,159,88,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; flex-shrink: 0;
+  }
+  .terminal {
+    background: var(--bg-void);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-sec);
+    z-index: 1;
+  }
+  .terminal__line { margin-bottom: 0.3rem; }
+  .terminal__prompt { color: var(--accent-py); }
+  .terminal__cmd    { color: var(--text-prime); }
+  .terminal__out    { color: var(--text-code); }
+  .terminal__cursor {
+    display: inline-block; width: 8px; height: 14px;
+    background: var(--accent-py); vertical-align: middle;
+    animation: blink 1s step-end infinite;
+    border-radius: 1px;
+  }
+
+  /* ── Right form panel ── */
+  .auth-form-panel {
+    display        : flex;
+    flex-direction : column;
+    justify-content: center;
+    padding        : 3rem 2.5rem;
+    background     : var(--bg-void);
+  }
+  .auth-form-wrap { max-width: 420px; margin: 0 auto; width: 100%; }
+  .auth-tabs { display: flex; gap: 0.25rem; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.25rem; margin-bottom: 2rem; }
+  .auth-tab {
+    flex: 1; text-align: center;
+    padding: 0.55rem; border-radius: calc(var(--radius-md) - 2px);
+    font-size: 0.88rem; font-weight: 600;
+    color: var(--text-mute); cursor: pointer;
+    transition: all var(--transition);
+  }
+  .auth-tab--active { background: var(--bg-card); color: var(--text-prime); }
+  .auth-form { display: none; animation: fadeUp 0.35s ease; }
+  .auth-form--active { display: block; }
+  .auth-form__title { font-size: 1.5rem; font-family: var(--font-display); font-weight: 800; margin-bottom: 0.4rem; }
+  .auth-form__subtitle { font-size: 0.88rem; color: var(--text-mute); margin-bottom: 1.75rem; }
+  .auth-form__stack { display: flex; flex-direction: column; gap: 1rem; }
+
+  /* password-reveal button */
+  .input-wrap { position: relative; }
+  .input-wrap input { padding-right: 3rem; }
+  .pw-eye {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--text-mute); font-size: 1rem; cursor: pointer; user-select: none;
+    transition: color var(--transition);
+  }
+  .pw-eye:hover { color: var(--text-prime); }
+
+  /* OTP section */
+  .otp-panel { display: none; }
+  .otp-panel.visible { display: block; animation: fadeUp 0.35s ease; }
+  .otp-email-display {
+    text-align: center; margin-bottom: 1.5rem;
+    padding: 0.85rem; background: rgba(59,159,88,0.06);
+    border: 1px solid rgba(59,159,88,0.2); border-radius: var(--radius-md);
+    font-size: 0.88rem; color: var(--text-sec);
+  }
+  .otp-email-display strong { color: var(--text-prime); }
+  .otp-countdown { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-mute); text-align: center; margin-top: 1rem; }
+  .otp-countdown span { color: var(--accent-gold); }
+
+  /* step indicator */
+  .step-bar { display: flex; align-items: center; gap: 0; margin-bottom: 2rem; }
+  .step-bar__step {
+    flex: 1; text-align: center; font-size: 0.72rem; font-family: var(--font-mono);
+    color: var(--text-mute); font-weight: 700; letter-spacing: 0.05em;
+    position: relative;
+  }
+  .step-bar__step::before {
+    content: attr(data-n);
+    display: block; width: 26px; height: 26px;
+    border-radius: 50%; border: 2px solid var(--text-mute);
+    line-height: 22px; margin: 0 auto 0.3rem;
+    font-size: 0.82rem;
+  }
+  .step-bar__step--active { color: var(--accent-py); }
+  .step-bar__step--active::before { border-color: var(--accent-py); background: rgba(59,159,88,0.1); color: var(--accent-py); }
+  .step-bar__step--done { color: var(--accent-py); }
+  .step-bar__step--done::before { background: var(--accent-py); border-color: var(--accent-py); content: '✓'; color: #fff; }
+  .step-bar__line { flex: 0 0 40px; height: 2px; background: var(--border); }
+
+  /* forgot / reset */
+  .back-link { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--text-mute); cursor: pointer; margin-bottom: 1.5rem; transition: color var(--transition); }
+  .back-link:hover { color: var(--accent-py); }
+
+  .auth-switch { text-align: center; font-size: 0.83rem; color: var(--text-mute); margin-top: 1.25rem; }
+  .auth-switch a { color: var(--accent-py); cursor: pointer; font-weight: 600; }
+  .auth-switch a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="auth-split">
+
+  <!-- ════ LEFT PANEL ═══════════════════════════════════════ -->
+  <div class="auth-panel">
+    <div class="auth-panel__grid"></div>
+    <div class="auth-panel__logo">🐍 Smart<span>Pythonists</span></div>
+
+    <div class="auth-panel__main">
+      <span class="auth-panel__snake">🐍</span>
+      <h2 class="auth-panel__tagline">Master <em>Django REST</em><br>Framework — Together</h2>
+      <ul class="auth-panel__features">
+        <li class="auth-panel__feature"><div class="auth-panel__feature-icon">📚</div>Curated DRF tutorials by topic & difficulty</li>
+        <li class="auth-panel__feature"><div class="auth-panel__feature-icon">💬</div>Threaded Q&A — ask questions, get answers</li>
+        <li class="auth-panel__feature"><div class="auth-panel__feature-icon">🏆</div>Track your learning progress & reputation</li>
+        <li class="auth-panel__feature"><div class="auth-panel__feature-icon">🔔</div>Notifications when someone replies to you</li>
+        <li class="auth-panel__feature"><div class="auth-panel__feature-icon">🔗</div>Curated external resources per topic</li>
+      </ul>
+    </div>
+
+    <div class="terminal">
+      <div class="terminal__line"><span class="terminal__prompt">>>> </span><span class="terminal__cmd">import smartpythonists</span></div>
+      <div class="terminal__line"><span class="terminal__prompt">>>> </span><span class="terminal__cmd">smartpythonists.learn()</span></div>
+      <div class="terminal__line"><span class="terminal__out"># Unlocking DRF mastery...</span></div>
+      <div class="terminal__line"><span class="terminal__out">✓ 10 topics loaded</span></div>
+      <div class="terminal__line"><span class="terminal__prompt">>>> </span><span class="terminal__cursor"></span></div>
+    </div>
+  </div>
+
+  <!-- ════ RIGHT FORM PANEL ════════════════════════════════ -->
+  <div class="auth-form-panel">
+    <div class="auth-form-wrap" id="mainAuthWrap">
+
+      <!-- TABS -->
+      <div class="auth-tabs">
+        <div class="auth-tab auth-tab--active" data-tab="login" onclick="switchTab('login')">Sign In</div>
+        <div class="auth-tab" data-tab="register" onclick="switchTab('register')">Register</div>
+      </div>
+
+      <!-- ── LOGIN FORM ── -->
+      <div class="auth-form auth-form--active" id="form-login">
+        <h2 class="auth-form__title">Welcome back 👋</h2>
+        <p class="auth-form__subtitle">Sign in to continue your Python journey</p>
+        <div class="auth-form__stack">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-wrap">
+              <input type="password" id="login-password" placeholder="Your password" autocomplete="current-password"/>
+              <span class="pw-eye" onclick="togglePw('login-password',this)">👁</span>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <a class="auth-switch" style="font-size:0.82rem" onclick="showForgot()">
+              <span style="color:var(--accent-py);cursor:pointer">Forgot password?</span>
+            </a>
+          </div>
+          <button class="btn btn--primary btn--full btn--lg" id="loginBtn" onclick="doLogin()">
+            Sign In
+          </button>
+          <div class="divider">or</div>
+          <div class="auth-switch">
+            Don't have an account? <a onclick="switchTab('register')">Create one</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── REGISTER FORM ── -->
+      <div class="auth-form" id="form-register">
+        <div class="step-bar" id="regStepBar">
+          <div class="step-bar__step step-bar__step--active" data-n="1">Details</div>
+          <div class="step-bar__line"></div>
+          <div class="step-bar__step" data-n="2">Verify</div>
+          <div class="step-bar__line"></div>
+          <div class="step-bar__step" data-n="3">Done</div>
+        </div>
+
+        <!-- Step 1: Registration details -->
+        <div id="regStep1">
+          <h2 class="auth-form__title">Create account ✨</h2>
+          <p class="auth-form__subtitle">Join thousands of Python developers</p>
+          <div class="auth-form__stack">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" id="reg-username" placeholder="cool_pythonista"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Phone <span style="color:var(--text-mute)">(optional)</span></label>
+                <input type="tel" id="reg-phone" placeholder="+1234567890"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" id="reg-email" placeholder="you@example.com"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <div class="input-wrap">
+                <input type="password" id="reg-password" placeholder="Strong password" oninput="checkStrength(this.value)"/>
+                <span class="pw-eye" onclick="togglePw('reg-password',this)">👁</span>
+              </div>
+              <div class="pw-meter" id="pwMeter">
+                <div class="pw-meter__bar"></div>
+                <div class="pw-meter__bar"></div>
+                <div class="pw-meter__bar"></div>
+                <div class="pw-meter__bar"></div>
+              </div>
+              <div class="form-hint" id="pwHint">Min 8 chars, 1 uppercase, 1 number, 1 symbol</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm Password</label>
+              <div class="input-wrap">
+                <input type="password" id="reg-confirm" placeholder="Repeat password"/>
+                <span class="pw-eye" onclick="togglePw('reg-confirm',this)">👁</span>
+              </div>
+            </div>
+            <button class="btn btn--primary btn--full btn--lg" id="regBtn" onclick="doRegister()">
+              Create Account →
+            </button>
+            <div class="auth-switch">Already have an account? <a onclick="switchTab('login')">Sign in</a></div>
+          </div>
+        </div>
+
+        <!-- Step 2: OTP verification -->
+        <div id="regStep2" class="hidden">
+          <h2 class="auth-form__title">Check your inbox 📬</h2>
+          <p class="auth-form__subtitle">We sent a 6-digit code to your email</p>
+          <div class="otp-email-display">
+            Code sent to <strong id="otpEmailDisplay"></strong>
+          </div>
+          <div class="otp-input-group" id="otpInputs">
+            <input type="text" maxlength="1" class="otp-digit" oninput="otpInput(this,0)" onkeydown="otpBack(event,0)"/>
+            <input type="text" maxlength="1" class="otp-digit" oninput="otpInput(this,1)" onkeydown="otpBack(event,1)"/>
+            <input type="text" maxlength="1" class="otp-digit" oninput="otpInput(this,2)" onkeydown="otpBack(event,2)"/>
+            <input type="text" maxlength="1" class="otp-digit" oninput="otpInput(this,3)" onkeydown="otpBack(event,3)"/>
+            <input type="text" maxlength="1" class="otp-digit" oninput="otpInput(this,4)" onkeydown="otpBack(event,4)"/>
+            <input type="text" maxlength="1" class="otp-digit" oninput="otpInput(this,5)" onkeydown="otpBack(event,5)"/>
+          </div>
+          <div class="otp-countdown" id="otpCountdown">Resend in <span id="otpTimer">60</span>s</div>
+          <button class="btn btn--ghost w-full mt-4 hidden" id="resendBtn" onclick="doResend()">Resend Code</button>
+          <button class="btn btn--primary btn--full btn--lg mt-4" id="verifyBtn" onclick="doVerifyOTP()">Verify Email ✓</button>
+        </div>
+
+        <!-- Step 3: Success -->
+        <div id="regStep3" class="hidden" style="text-align:center;padding:2rem 0">
+          <div style="font-size:4rem;margin-bottom:1rem">🎉</div>
+          <h2 class="auth-form__title">You're in!</h2>
+          <p style="color:var(--text-sec);margin:0.75rem 0 1.5rem">Your account is verified. Start learning DRF!</p>
+          <button class="btn btn--primary btn--lg" onclick="window.location.href='index.html'">Go to Dashboard →</button>
+        </div>
+      </div>
+
+      <!-- ── FORGOT PASSWORD ── -->
+      <div class="auth-form" id="form-forgot">
+        <span class="back-link" onclick="switchTab('login')">← Back to Sign In</span>
+        <h2 class="auth-form__title">Reset Password 🔑</h2>
+        <p class="auth-form__subtitle">Enter your email and we'll send a reset link</p>
+        <div id="forgotStep1">
+          <div class="auth-form__stack">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" id="forgot-email" placeholder="your@email.com"/>
+            </div>
+            <button class="btn btn--primary btn--full btn--lg" onclick="doForgot()">Send Reset Link</button>
+          </div>
+        </div>
+        <div id="forgotStep2" class="hidden">
+          <div style="text-align:center;padding:1.5rem 0">
+            <div style="font-size:3rem;margin-bottom:1rem">📧</div>
+            <p style="color:var(--text-sec)">Check your email for the reset link. It expires in 1 hour.</p>
+            <button class="btn btn--ghost mt-4" onclick="switchTab('login')">← Back to Login</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /auth-form-wrap -->
+  </div>
+</div>
+
+<script src="sp_core.js"></script>
+<script>
+SP.redirectIfAuthed();
+
+// ── Tab switching ─────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('auth-form--active'));
+  document.querySelectorAll('.auth-tab').forEach(t => {
+    t.classList.toggle('auth-tab--active', t.dataset.tab === name);
+  });
+  const target = document.getElementById(`form-${name}`);
+  if (target) target.classList.add('auth-form--active');
+}
+
+function showForgot() {
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('auth-form--active'));
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('auth-tab--active'));
+  document.getElementById('form-forgot').classList.add('auth-form--active');
+}
+
+// ── Password toggle ───────────────────────────────────────
+function togglePw(id, el) {
+  const inp = document.getElementById(id);
+  if (inp.type === 'password') { inp.type = 'text'; el.textContent = '🙈'; }
+  else { inp.type = 'password'; el.textContent = '👁'; }
+}
+
+// ── Password strength ─────────────────────────────────────
+function checkStrength(pw) {
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const meter = document.getElementById('pwMeter');
+  meter.className = `pw-meter pw-meter--${score}`;
+  const hints = ['','Weak — add uppercase & numbers','Fair — add symbols','Good — add more variety','Strong! 💪'];
+  document.getElementById('pwHint').textContent = hints[score] || '';
+}
+
+// ── Register ──────────────────────────────────────────────
+let regEmail = '';
+async function doRegister() {
+  const btn = document.getElementById('regBtn');
+  const email = document.getElementById('reg-email').value.trim();
+  const username = document.getElementById('reg-username').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+
+  if (!email || !username || !password) return SP.toast('Please fill all required fields','warning');
+  if (password !== confirm) return SP.toast('Passwords do not match','error');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Creating...';
+  const {ok, data} = await SP.UserAPI.register({email, username, phone, password, password_confirm: confirm});
+  btn.disabled = false;
+  btn.innerHTML = 'Create Account →';
+
+  if (ok) {
+    regEmail = email;
+    document.getElementById('otpEmailDisplay').textContent = email;
+    document.getElementById('regStep1').classList.add('hidden');
+    document.getElementById('regStep2').classList.remove('hidden');
+    // update step bar
+    document.querySelectorAll('.step-bar__step')[0].className = 'step-bar__step step-bar__step--done';
+    document.querySelectorAll('.step-bar__step')[1].className = 'step-bar__step step-bar__step--active';
+    startOTPCountdown();
+    SP.toast('Account created! Check your email for the OTP','success');
+  } else {
+    SP.toast(SP.extractErrors(data),'error');
+  }
+}
+
+// ── OTP Input helpers ─────────────────────────────────────
+function otpInput(el, idx) {
+  el.value = el.value.replace(/\D/,'');
+  if (el.value && idx < 5) {
+    document.querySelectorAll('.otp-digit')[idx+1].focus();
+  }
+  // auto-verify when all 6 filled
+  const all = [...document.querySelectorAll('.otp-digit')].map(i=>i.value).join('');
+  if (all.length === 6) doVerifyOTP();
+}
+function otpBack(e, idx) {
+  if (e.key==='Backspace' && !e.target.value && idx > 0) {
+    document.querySelectorAll('.otp-digit')[idx-1].focus();
+  }
+}
+
+let otpInterval;
+function startOTPCountdown(seconds = 60) {
+  let t = seconds;
+  document.getElementById('otpCountdown').classList.remove('hidden');
+  document.getElementById('resendBtn').classList.add('hidden');
+  otpInterval = setInterval(() => {
+    t--;
+    const el = document.getElementById('otpTimer');
+    if (el) el.textContent = t;
+    if (t <= 0) {
+      clearInterval(otpInterval);
+      document.getElementById('otpCountdown').classList.add('hidden');
+      document.getElementById('resendBtn').classList.remove('hidden');
+    }
+  }, 1000);
+}
+
+async function doVerifyOTP() {
+  const otp = [...document.querySelectorAll('.otp-digit')].map(i=>i.value).join('');
+  if (otp.length < 6) return SP.toast('Enter all 6 digits','warning');
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Verifying...';
+  const {ok, data} = await SP.UserAPI.verifyOTP({email: regEmail, otp});
+  btn.disabled = false; btn.innerHTML = 'Verify Email ✓';
+  if (ok) {
+    clearInterval(otpInterval);
+    document.getElementById('regStep2').classList.add('hidden');
+    document.getElementById('regStep3').classList.remove('hidden');
+    document.querySelectorAll('.step-bar__step')[1].className = 'step-bar__step step-bar__step--done';
+    document.querySelectorAll('.step-bar__step')[2].className = 'step-bar__step step-bar__step--active';
+    SP.toast('Email verified! 🎉','success');
+  } else {
+    SP.toast(SP.extractErrors(data),'error');
+    // shake inputs
+    document.getElementById('otpInputs').style.animation='glitch 0.4s';
+    setTimeout(()=>document.getElementById('otpInputs').style.animation='',500);
+  }
+}
+
+async function doResend() {
+  const {ok, data} = await SP.UserAPI.resendOTP({email: regEmail});
+  if (ok) { SP.toast('New code sent!','success'); startOTPCountdown(); }
+  else SP.toast(SP.extractErrors(data),'error');
+}
+
+// ── Login ─────────────────────────────────────────────────
+async function doLogin() {
+  const btn = document.getElementById('loginBtn');
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) return SP.toast('Enter email and password','warning');
+
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Signing in...';
+  const {ok, data} = await SP.UserAPI.login({email, password});
+  btn.disabled = false; btn.innerHTML = 'Sign In';
+
+  if (ok) {
+    SP.Auth.save(data);
+    SP.toast('Welcome back! 🐍','success');
+    setTimeout(() => window.location.href = 'index.html', 700);
+  } else {
+    SP.toast(SP.extractErrors(data),'error');
+    document.getElementById('login-password').value = '';
+  }
+}
+
+// ── Forgot password ────────────────────────────────────────
+async function doForgot() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) return SP.toast('Enter your email','warning');
+  const {ok, data} = await SP.UserAPI.resetRequest({email});
+  if (ok) {
+    document.getElementById('forgotStep1').classList.add('hidden');
+    document.getElementById('forgotStep2').classList.remove('hidden');
+    SP.toast('Reset link sent if email exists','info');
+  } else {
+    SP.toast(SP.extractErrors(data),'error');
+  }
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const active = document.querySelector('.auth-form.auth-form--active');
+  if (!active) return;
+  if (active.id === 'form-login') doLogin();
+  else if (active.id === 'form-register' && !document.getElementById('regStep1').classList.contains('hidden')) doRegister();
+  else if (active.id === 'form-forgot') doForgot();
+});
+</script>
+</body>
+</html>

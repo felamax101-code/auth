@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartPythonists — Resources</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.resources-hero {
+  padding: 3rem 0 2rem;
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.resources-hero__eyebrow {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(0,212,255,0.07); border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 99px; padding: 0.3rem 0.85rem;
+  font-size: 0.76rem; font-family: var(--font-mono);
+  color: var(--accent-cyan); margin-bottom: 1rem; font-weight: 700; letter-spacing: 0.06em;
+}
+.resources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.resource-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: all var(--transition);
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.resource-card:hover {
+  border-color: rgba(0,212,255,0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,212,255,0.07);
+}
+.resource-card__type-icon {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; flex-shrink: 0;
+  background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.12);
+}
+.resource-card__header { display: flex; gap: 0.75rem; align-items: flex-start; }
+.resource-card__info { flex: 1; }
+.resource-card__title { font-weight: 700; font-size: 0.92rem; line-height: 1.3; margin-bottom: 0.25rem; }
+.resource-card__author { font-size: 0.75rem; color: var(--text-mute); font-family: var(--font-mono); }
+.resource-card__desc { font-size: 0.83rem; color: var(--text-sec); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.resource-card__footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+.resource-card__meta { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.resource-pill {
+  padding: 0.2rem 0.55rem; border-radius: 99px;
+  font-size: 0.7rem; font-family: var(--font-mono); font-weight: 600;
+}
+.pill--free { background: rgba(59,159,88,0.1); color: var(--accent-py); }
+.pill--paid { background: rgba(240,180,41,0.1); color: var(--accent-gold); }
+.pill--hours { background: rgba(255,255,255,0.05); color: var(--text-mute); border: 1px solid var(--border); }
+
+.resource-rating { display: flex; align-items: center; gap: 0.3rem; font-family: var(--font-mono); font-size: 0.78rem; }
+.stars { color: var(--accent-gold); }
+
+/* Filter bar */
+.resources-filters {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+  padding: 1.25rem 0; border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+/* Type filter tabs */
+.type-tabs { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.type-tab {
+  padding: 0.35rem 0.8rem;
+  border-radius: 99px;
+  font-size: 0.78rem; font-weight: 600;
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text-mute); cursor: pointer;
+  transition: all var(--transition);
+}
+.type-tab:hover, .type-tab--active {
+  background: rgba(0,212,255,0.08);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+/* Admin add resource */
+.add-resource-form {
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: var(--radius-xl); padding: 2rem; margin-bottom: 2rem;
+  display: none;
+}
+.add-resource-form.open { display: block; animation: fadeUp 0.3s ease; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container navbar__inner">
+    <a href="index.html" class="navbar__logo">🐍 Smart<span>Pythonists</span></a>
+    <div class="navbar__links">
+      <a class="navbar__link" href="index.html">Feed</a>
+      <a class="navbar__link navbar__link--active" href="resources.html">Resources</a>
+      <a class="navbar__link" href="dashboard.html">Dashboard</a>
+    </div>
+    <div class="navbar__actions">
+      <a class="navbar__notif hidden" id="notifBtn" href="notifications.html">🔔<span class="notif-badge hidden" id="notifCount">0</span></a>
+      <div style="position:relative">
+        <div class="navbar__avatar" id="avatarBtn" onclick="toggleDropdown()">?</div>
+        <div class="dropdown" id="userDropdown">
+          <div class="dropdown__item" onclick="window.location.href='profile.html'">⚙ Profile</div>
+          <div class="dropdown__item" onclick="window.location.href='dashboard.html'">📊 Dashboard</div>
+          <div class="dropdown__divider"></div>
+          <div class="dropdown__item dropdown__item--danger" onclick="doLogout()">↩ Sign Out</div>
+        </div>
+      </div>
+      <a class="btn btn--primary btn--sm hidden" id="loginNavBtn" href="auth.html">Sign In</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="resources-hero">
+  <div class="hero-bg"><div class="hero-bg__grid"></div></div>
+  <div class="container">
+    <div class="resources-hero__eyebrow">🔗 Curated Learning Resources</div>
+    <h1 style="font-size:clamp(1.8rem,4vw,2.8rem);margin-bottom:0.75rem">
+      Everything you need to<br><span style="color:var(--accent-cyan)">master DRF</span>
+    </h1>
+    <p style="color:var(--text-sec);font-size:0.95rem;max-width:520px">
+      Hand-picked documentation, tutorials, courses, and tools — filtered by topic and difficulty level.
+    </p>
+  </div>
+</section>
+
+<div class="container" style="padding-top:1.5rem;padding-bottom:4rem">
+
+  <!-- Admin: Add Resource -->
+  <div class="hidden" id="adminAddBtn" style="margin-bottom:1rem">
+    <button class="btn btn--primary" onclick="toggleAddForm()">+ Add Resource</button>
+  </div>
+  <div class="add-resource-form" id="addResourceForm">
+    <h3 style="margin-bottom:1.5rem;font-family:var(--font-display)">Add New Resource</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div class="form-group"><label class="form-label">Title</label><input type="text" id="r-title" placeholder="Resource title"/></div>
+      <div class="form-group"><label class="form-label">Author</label><input type="text" id="r-author" placeholder="Author name"/></div>
+      <div class="form-group"><label class="form-label">Topic</label>
+        <select id="r-topic"><option value="serializers">Serializers</option><option value="views">Views & ViewSets</option><option value="authentication">Authentication</option><option value="permissions">Permissions</option><option value="pagination">Pagination</option><option value="filtering">Filtering</option><option value="validation">Validation</option><option value="advanced">Advanced</option><option value="best_practices">Best Practices</option><option value="troubleshooting">Troubleshooting</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Difficulty</label>
+        <select id="r-difficulty"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Type</label>
+        <select id="r-type"><option value="documentation">Documentation</option><option value="youtube">YouTube</option><option value="course">Course</option><option value="book">Book</option><option value="article">Article</option><option value="github">GitHub</option><option value="tool">Tool</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">URL</label><input type="url" id="r-url" placeholder="https://..."/></div>
+      <div class="form-group"><label class="form-label">Est. Hours</label><input type="number" id="r-hours" placeholder="2.5" step="0.5"/></div>
+      <div class="form-group"><label class="form-label">Rating (1-5)</label><input type="number" id="r-rating" placeholder="4.5" min="1" max="5" step="0.1"/></div>
+    </div>
+    <div class="form-group" style="margin-bottom:1rem"><label class="form-label">Description</label><textarea id="r-desc" placeholder="What will learners get from this resource?"></textarea></div>
+    <div style="display:flex;gap:0.75rem;align-items:center">
+      <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;color:var(--text-sec);cursor:pointer">
+        <input type="checkbox" id="r-free" checked style="width:auto"/> Free Resource
+      </label>
+      <button class="btn btn--primary" onclick="doAddResource()">Add Resource 🔗</button>
+      <button class="btn btn--ghost" onclick="toggleAddForm()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="resources-filters">
+    <!-- Topic selector -->
+    <select id="topicFilter" onchange="loadResources()" style="width:auto;font-size:0.85rem;padding:0.5rem 0.85rem">
+      <option value="">All Topics</option>
+      <option value="serializers">Serializers</option>
+      <option value="views">Views & ViewSets</option>
+      <option value="authentication">Authentication</option>
+      <option value="permissions">Permissions</option>
+      <option value="pagination">Pagination</option>
+      <option value="filtering">Filtering</option>
+      <option value="validation">Validation</option>
+      <option value="advanced">Advanced</option>
+      <option value="best_practices">Best Practices</option>
+      <option value="troubleshooting">Troubleshooting</option>
+    </select>
+
+    <!-- Difficulty -->
+    <select id="diffFilter" onchange="loadResources()" style="width:auto;font-size:0.85rem;padding:0.5rem 0.85rem">
+      <option value="">All Levels</option>
+      <option value="beginner">🟢 Beginner</option>
+      <option value="intermediate">🟡 Intermediate</option>
+      <option value="advanced">🔴 Advanced</option>
+    </select>
+
+    <!-- Type tabs -->
+    <div class="type-tabs" id="typeTabs">
+      <div class="type-tab type-tab--active" data-type="" onclick="filterType('',this)">All</div>
+      <div class="type-tab" data-type="documentation" onclick="filterType('documentation',this)">📖 Docs</div>
+      <div class="type-tab" data-type="youtube" onclick="filterType('youtube',this)">▶ YouTube</div>
+      <div class="type-tab" data-type="course" onclick="filterType('course',this)">🎓 Course</div>
+      <div class="type-tab" data-type="article" onclick="filterType('article',this)">📝 Article</div>
+      <div class="type-tab" data-type="github" onclick="filterType('github',this)">💻 GitHub</div>
+      <div class="type-tab" data-type="tool" onclick="filterType('tool',this)">🔧 Tool</div>
+    </div>
+
+    <span class="results-count" id="resCount" style="margin-left:auto;font-size:0.82rem;color:var(--text-mute);font-family:var(--font-mono)"></span>
+  </div>
+
+  <!-- Grid -->
+  <div class="resources-grid" id="resourcesGrid">
+    <div class="loading-overlay" style="grid-column:1/-1"><div class="spinner"></div></div>
+  </div>
+
+</div>
+
+<script src="sp_core.js"></script>
+<script>
+const TYPE_ICONS = {documentation:'📖',youtube:'▶',course:'🎓',book:'📚',article:'📝',github:'💻',tool:'🔧'};
+let activeType = '';
+
+// Navbar
+(function() {
+  if (SP.Auth.isLoggedIn()) {
+    const u = SP.Auth.getUser();
+    document.getElementById('avatarBtn').textContent = (u?.username||'U')[0].toUpperCase();
+    document.getElementById('notifBtn').classList.remove('hidden');
+    if (SP.Auth.isStaff()) document.getElementById('adminAddBtn').classList.remove('hidden');
+  } else {
+    document.getElementById('avatarBtn').classList.add('hidden');
+    document.getElementById('loginNavBtn').classList.remove('hidden');
+  }
+})();
+
+function filterType(type, el) {
+  activeType = type;
+  document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('type-tab--active'));
+  el.classList.add('type-tab--active');
+  loadResources();
+}
+
+async function loadResources() {
+  const topic = document.getElementById('topicFilter').value;
+  const difficulty = document.getElementById('diffFilter').value;
+  const params = {};
+  if (topic) params.topic = topic;
+  if (difficulty) params.difficulty = difficulty;
+  if (activeType) params.type = activeType;
+
+  document.getElementById('resourcesGrid').innerHTML = '<div class="loading-overlay" style="grid-column:1/-1"><div class="spinner"></div></div>';
+
+  let res;
+  if (topic && !difficulty && !activeType) {
+    res = await SP.ResourceAPI.byTopic(topic);
+    // Extract from {topic, total, resources}
+    if (res.ok && res.data.resources) res = {ok:true, data: res.data.resources};
+    else if (res.ok) res.data = [];
+  } else {
+    res = await SP.ResourceAPI.list(params);
+  }
+
+  const {ok, data} = res;
+  const resources = Array.isArray(data) ? data : (data?.results || data || []);
+
+  if (!ok || !resources.length) {
+    document.getElementById('resourcesGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state__icon">🔗</div><p class="empty-state__text">No resources found for these filters.</p></div>`;
+    document.getElementById('resCount').textContent = '0 resources';
+    return;
+  }
+
+  document.getElementById('resCount').textContent = `${resources.length} resource${resources.length!==1?'s':''}`;
+  document.getElementById('resourcesGrid').innerHTML = resources.map(r => `
+    <div class="resource-card">
+      <div class="resource-card__header">
+        <div class="resource-card__type-icon">${TYPE_ICONS[r.resource_type]||'🔗'}</div>
+        <div class="resource-card__info">
+          <div class="resource-card__title">${r.title}</div>
+          <div class="resource-card__author">by ${r.author}</div>
+        </div>
+      </div>
+      <div class="resource-card__desc">${r.description}</div>
+      <div class="resource-card__footer">
+        <div class="resource-card__meta">
+          ${SP.difficultyBadge(r.difficulty)}
+          <span class="badge badge--topic">${SP.topicIcon(r.topic)} ${r.topic.replace('_',' ')}</span>
+          <span class="resource-pill ${r.is_free?'pill--free':'pill--paid'}">${r.is_free?'Free':'Paid'}</span>
+          ${r.estimated_hours ? `<span class="resource-pill pill--hours">⏱ ${r.estimated_hours}h</span>` : ''}
+        </div>
+        ${r.rating ? `<div class="resource-rating"><span class="stars">★</span>${r.rating}</div>` : ''}
+      </div>
+      <a href="${r.url}" target="_blank" class="btn btn--secondary btn--sm">Open Resource →</a>
+    </div>
+  `).join('');
+}
+
+// Admin: add resource
+function toggleAddForm() {
+  document.getElementById('addResourceForm').classList.toggle('open');
+}
+async function doAddResource() {
+  const payload = {
+    title: document.getElementById('r-title').value.trim(),
+    author: document.getElementById('r-author').value.trim(),
+    description: document.getElementById('r-desc').value.trim(),
+    topic: document.getElementById('r-topic').value,
+    difficulty: document.getElementById('r-difficulty').value,
+    resource_type: document.getElementById('r-type').value,
+    url: document.getElementById('r-url').value.trim(),
+    is_free: document.getElementById('r-free').checked,
+    estimated_hours: parseFloat(document.getElementById('r-hours').value) || null,
+    rating: parseFloat(document.getElementById('r-rating').value) || null,
+  };
+  if (!payload.title || !payload.url) return SP.toast('Title and URL required','warning');
+  const {ok,data} = await SP.ResourceAPI.create(payload);
+  if (ok) { SP.toast('Resource added! 🔗','success'); toggleAddForm(); loadResources(); }
+  else SP.toast(SP.extractErrors(data),'error');
+}
+
+function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('#avatarBtn') && !e.target.closest('#userDropdown')) document.getElementById('userDropdown')?.classList.remove('open'); });
+async function doLogout() { await SP.UserAPI.logout({refresh:SP.Auth.getRefresh()}); SP.Auth.clear(); window.location.href='auth.html'; }
+
+loadResources();
+</script>
+</body>
+</html>
