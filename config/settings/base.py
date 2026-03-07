@@ -350,10 +350,7 @@ INSTALLED_APPS = [
     
     # Local
     "apps.users",
-    "apps.blog",
     "django_filters",
-    "apps.carwash",
-    "apps.EC",
     "apps.smartpythonists"
     #'users.apps.UsersConfig',
 ]

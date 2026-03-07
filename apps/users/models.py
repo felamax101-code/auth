@@ -68,7 +68,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     locked_until=models.DateTimeField(null=True,blank=True)
     last_failed_attempt = models.DateTimeField(null=True,blank=True)
     #time stamps
-    date_joined = models.DateTimeField(default=timezone.now())
+    date_joined = models.DateTimeField(default=timezone.now)
     last_time_updated=models.DateTimeField(null=True,blank=True)
     last_login_ip=models.GenericIPAddressField(null=True,blank=True)
     last_login_at=models.DateTimeField(null=True,blank=True)
