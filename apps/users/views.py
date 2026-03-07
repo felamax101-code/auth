@@ -251,7 +251,7 @@ from .serializers import (
     EmailVerificationSerializer, EmailResendSerializer,
     UserProfileSerializer, AccountDeletionSerializer
 )
-from .utils import send_email_verification, send_password_reset_email
+from .utils import send_email_verification, send_password_reset_email ,send_otp_email
 from .permissions import (LoginRateLimit,RegisterRateLimit,PasswordResetRateLimit,
                           EmailVerificationRateLimit,IsEmailVerified,IsActiveUser)
 from .authentication import CustomJWTAuthentication
@@ -287,11 +287,11 @@ class RegisterView(APIView):
                 user = serializer.save()
                 
                 # Generate email verification token
-                token = user.generate_email_verification_token()
-                
+                #token = user.generate_email_verification_token()
+                otp=user.generate_email_otp()
                 # Send verification email
-                send_email_verification(user.email, token)
-            
+                #send_email_verification(user.email, token)
+                send_otp_email(user.email,otp,username=user.username)
             return Response({
                 'message': 'Registration successful. Please verify your email to activate your account.',
                 'email': user.email
