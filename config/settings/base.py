@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
 
     # Local
-    'apps.smartpythonists',
+    
     'apps.authe',
 ]
 
