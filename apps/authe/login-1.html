@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+</head>
+<body>
+
+<section class="auth-section" style="
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 90vh; 
+    padding: 20px; 
+    background: linear-gradient(to bottom, #000000, #001133);
+">
+  <div class="auth-card" style="
+      background: rgba(0, 60, 120, 0.85); 
+      padding: 40px 30px; 
+      border-radius: 20px; 
+      width: 100%; 
+      max-width: 400px; 
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+      color: #fff; 
+      backdrop-filter: blur(10px);
+      text-align: center;
+  ">
+    <h2 style="color: #4da6ff; margin-bottom: 25px; font-size: 28px;">Login</h2>
+
+    <!-- Error box — filled by JS from Django response -->
+    <div id="errorBox" style="
+        display:none;
+        background:rgba(255,0,0,0.3);
+        color:#ffdddd;
+        padding:10px;
+        border-radius:8px;
+        margin-bottom:15px;
+        text-align:center;
+    "></div>
+
+    <form method="POST" action="login.php" onsubmit="handleLogin(event)">
+
+       <div style="position:relative;margin-bottom:22px;">
+        <input 
+            type="email" 
+            id="email"
+            name="email" 
+            required
+            placeholder=" "
+            style="
+                width:100%;
+                padding:14px 12px;
+                border-radius:10px;
+                border:none;
+                background:rgba(255,255,255,0.1);
+                color:white;
+                font-size:15px;
+                outline:none;
+            ">
+        <label style="
+            position:absolute;
+            left:12px;
+            top:14px;
+            color:#cce0ff;
+            font-size:14px;
+            pointer-events:none;
+            transition:0.3s;
+            background:transparent;
+        ">
+        Email
+        </label>
+        </div>
+
+        <div style="position:relative;margin-bottom:22px;">
+        <input 
+            type="password" 
+            id="password"
+            name="password" 
+            required
+            placeholder=" "
+            style="
+                width:100%;
+                padding:14px 40px 14px 12px;
+                border-radius:10px;
+                border:none;
+                background:rgba(255,255,255,0.1);
+                color:white;
+                font-size:15px;
+                outline:none;
+            ">
+        <label style="
+            position:absolute;
+            left:12px;
+            top:14px;
+            color:#cce0ff;
+            font-size:14px;
+            pointer-events:none;
+            transition:0.3s;
+        ">
+        Password
+        </label>
+        <span onclick="togglePassword()" style="
+            position:absolute;
+            right:12px;
+            top:14px;
+            cursor:pointer;
+            font-size:18px;
+            color:#cce0ff;
+        ">👁</span>
+        </div>
+
+        <button type="submit" id="loginBtn" style="
+            width:100%; padding:12px; background-color:#4da6ff; color:#fff; font-size:18px; 
+            border:none; border-radius:12px; cursor:pointer; font-weight:bold; transition:0.3s ease;
+        " onmouseover="this.style.backgroundColor='#3399ff';" onmouseout="this.style.backgroundColor='#4da6ff';">
+            Login
+        </button>
+
+    </form>
+
+    <p style="margin-top:15px; font-size:14px; color:#cce0ff;">
+        Don't have an account? <a href="register.php" style="color:#4da6ff; font-weight:bold; text-decoration:none;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">Register here</a>
+    </p>
+
+  </div>
+</section>
+
+<script>
+// ── Floating label effect ──────────────────────────────
+document.querySelectorAll("input").forEach(function(input){
+    var label = input.parentElement.querySelector("label");
+
+    input.addEventListener("focus", function(){
+        label.style.top = "-8px";
+        label.style.fontSize = "12px";
+        label.style.color = "#4da6ff";
+    });
+
+    input.addEventListener("blur", function(){
+        if(this.value === ""){
+            label.style.top = "14px";
+            label.style.fontSize = "14px";
+            label.style.color = "#cce0ff";
+        }
+    });
+});
+
+// ── Toggle password visibility ─────────────────────────
+function togglePassword(){
+    var field = document.getElementById("password");
+    field.type = field.type === "password" ? "text" : "password";
+}
+
+// ── Submit to Django API ───────────────────────────────
+let loginController = null  // tracks current request
+
+async function handleLogin(event){
+    event.preventDefault()
+
+    const btn      = document.getElementById("loginBtn")
+    const errorBox = document.getElementById("errorBox")
+
+    // Cancel any previous pending request
+    if(loginController){
+        loginController.abort()
+    }
+    loginController = new AbortController()
+
+    // Clear previous errors
+    errorBox.style.display = "none"
+    errorBox.innerText     = ""
+
+    // Disable button while loading
+    btn.disabled  = true
+    btn.innerText = "Logging in..."
+
+    const payload = {
+        email:    document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value,
+    }
+
+    try {
+        const res = await fetch("http://127.0.0.1:8000/api/auth/login/", {
+            method:  "POST",
+            headers: {"Content-Type": "application/json"},
+            body:    JSON.stringify(payload),
+            signal:  loginController.signal  // attach controller
+        })
+
+        const data = await res.json()
+
+        if(res.ok){
+            // Store tokens and user info
+            localStorage.setItem("access",   data.tokens.access)
+            localStorage.setItem("refresh",  data.tokens.refresh)
+            localStorage.setItem("username", data.user.username)
+            localStorage.setItem("email",    data.user.email)
+
+            // Redirect
+            window.location.href = "../booking.php"
+
+        } else {
+            // Show Django errors
+            let message = "Login failed. Please try again."
+
+            if(data.non_field_errors) message = data.non_field_errors.join(" | ")
+            else if(data.detail)      message = data.detail
+            else if(data.email)       message = data.email.join(" | ")
+            else if(data.password)    message = data.password.join(" | ")
+
+            errorBox.innerText     = message
+            errorBox.style.display = "block"
+
+            btn.disabled  = false
+            btn.innerText = "Login"
+        }
+
+    } catch(err){
+        // Ignore aborted requests — not a real error
+        if(err.name === "AbortError") return
+
+        errorBox.innerText     = "Network error. Please try again."
+        errorBox.style.display = "block"
+        btn.disabled  = false
+        btn.innerText = "Login"
+    }
+}
+</script>
+
+</body>
+</html>

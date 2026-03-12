@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartPythonists</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #080c14;
+    --surface:   #0d1525;
+    --border:    #1a2a44;
+    --accent:    #00d4ff;
+    --accent2:   #0066ff;
+    --danger:    #ff4466;
+    --success:   #00e5a0;
+    --warn:      #ffaa00;
+    --text:      #e8f0ff;
+    --muted:     #6b82a8;
+    --card:      rgba(13,21,37,0.9);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated background ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(0,102,255,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,212,255,0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* grid lines */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Pages ── */
+  .page { display: none; position: relative; z-index: 1; }
+  .page.active { display: block; }
+
+  /* ── Layout ── */
+  .center-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 44px 40px;
+    width: 100%;
+    max-width: 440px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 0 0 1px rgba(0,212,255,0.05), 0 24px 60px rgba(0,0,0,0.5);
+    animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Brand ── */
+  .brand {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand::before {
+    content: '';
+    width: 20px; height: 2px;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 32px;
+    font-weight: 300;
+  }
+
+  /* ── Form ── */
+  .field { margin-bottom: 18px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  input {
+    width: 100%;
+    padding: 13px 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+  }
+
+  input::placeholder { color: var(--muted); }
+
+  .input-wrap { position: relative; }
+  .input-wrap input { padding-right: 44px; }
+  .input-icon {
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 18px;
+    user-select: none;
+    transition: color 0.2s;
+  }
+  .input-icon:hover { color: var(--accent); }
+
+  /* ── OTP Input ── */
+  .otp-wrap {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 8px 0;
+  }
+  .otp-wrap input {
+    width: 52px; height: 60px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    padding: 0;
+    border-radius: 12px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(0,102,255,0.35);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(0,102,255,0.5);
+  }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-ghost:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-danger {
+    background: rgba(255,68,102,0.1);
+    border: 1px solid rgba(255,68,102,0.3);
+    color: var(--danger);
+  }
+  .btn-danger:hover {
+    background: rgba(255,68,102,0.2);
+  }
+
+  /* loading spinner inside btn */
+  .btn .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Alerts ── */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    margin-bottom: 20px;
+    display: none;
+    line-height: 1.5;
+  }
+  .alert.show { display: block; animation: fadeIn 0.3s; }
+  .alert-error   { background: rgba(255,68,102,0.12); border: 1px solid rgba(255,68,102,0.25); color: #ff8899; }
+  .alert-success { background: rgba(0,229,160,0.1);  border: 1px solid rgba(0,229,160,0.25);  color: var(--success); }
+  .alert-info    { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);   color: var(--accent); }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── Links ── */
+  .link-row {
+    text-align: center;
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-top: 22px;
+  }
+  .link-row a, .link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .link-row a:hover, .link:hover { color: #fff; }
+
+  /* ── Divider ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Navbar ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 64px;
+    background: rgba(8,12,20,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-brand {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .nav-actions { display: flex; gap: 10px; align-items: center; }
+  .nav-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+  .nav-btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid transparent;
+  }
+  .nav-btn-ghost:hover { color: var(--text); border-color: var(--border); }
+  .nav-btn-accent { background: var(--accent2); color: #fff; }
+  .nav-btn-accent:hover { background: var(--accent); }
+
+  /* ── Dashboard / Profile ── */
+  .dashboard-wrap {
+    padding: 88px 24px 40px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 36px;
+  }
+  .avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .profile-info h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+  }
+  .profile-info p { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+  .section-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(10px);
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::before {
+    content: '';
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .btn-row .btn { flex: 1; }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .badge-success { background: rgba(0,229,160,0.12); color: var(--success); border: 1px solid rgba(0,229,160,0.2); }
+  .badge-warn    { background: rgba(255,170,0,0.12);  color: var(--warn);    border: 1px solid rgba(255,170,0,0.2); }
+
+  /* ── Password strength ── */
+  .strength-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .strength-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s, background 0.3s;
+    width: 0%;
+  }
+  .strength-label {
+    font-size: 11px;
+    margin-top: 5px;
+    color: var(--muted);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 480px) {
+    .card { padding: 32px 24px; }
+    .otp-wrap input { width: 42px; height: 52px; font-size: 18px; }
+    nav { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     NAVBAR (shown when logged in)
+══════════════════════════════════════════════ -->
+<nav id="navbar" style="display:none;">
+  <div class="nav-brand">SmartPythonists</div>
+  <div class="nav-actions">
+    <button class="nav-btn nav-btn-ghost" onclick="go('profile')">Profile</button>
+    <button class="nav-btn nav-btn-ghost" onclick="go('logout')">Logout</button>
+    <button class="nav-btn nav-btn-accent" onclick="logoutAll()">Logout All</button>
+  </div>
+</nav>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE: LOGIN
+══════════════════════════════════════════════ -->
+<div class="page active" id="page-login">
+  <div class="center-wrap">
+    <div class="card">
+      <div class="brand">SmartPythonists</div>
+      <h1>Welcome back</h1>
+      <p class="subtitle">Sign in to your account to continue</p>
+
+      <div class="alert alert-error" id="login-err"></div>
+      <div class="alert alert-success" id="login-ok"></div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="input-wrap">
+          <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+          <span class="input-icon" onclick="toggleVis('login-pass',this)">👁</span>
+        </div>
+      </div>
+
+      <div style="text-align:right; margin-bottom:20px;">
+        <a class="link" onclick="go('forgot')" style="font-size:13px;">Forgot password?</a>
+      </div>
+
+      <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Sign In</button>
+
+      <div class="link-row">
+        No account? <a onclick="go('register')">Create one</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE: REGISTER
+══════════════════════════════════════════════ -->
+<div class="page" id="page-register">
+  <div class="center-wrap">
+    <div class="card">
+      <div class="brand">SmartPythonists</div>
+      <h1>Create account</h1>
+      <p class="subtitle">Join SmartPythonists today</p>
+
+      <div class="alert alert-error" id="reg-err"></div>
+      <div class="alert alert-success" id="reg-ok"></div>
+
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="reg-username" placeholder="cooldev42" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Phone <span style="color:var(--muted);font-size:11px;">(optional)</span></label>
+        <input type="tel" id="reg-phone" placeholder="+1 234 567 8900">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="input-wrap">
+          <input type="password" id="reg-pass" placeholder="••••••••" oninput="checkStrength(this)" autocomplete="new-password">
+          <span class="input-icon" onclick="toggleVis('reg-pass',this)">👁</span>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+        <div class="strength-label" id="strength-label"></div>
+      </div>
+      <div class="field">
+        <label>Confirm Password</label>
+        <div class="input-wrap">
+          <input type="password" id="reg-pass2" placeholder="••••••••" autocomplete="new-password">
+          <span class="input-icon" onclick="toggleVis('reg-pass2',this)">👁</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="reg-btn" onclick="doRegister()">Create Account</button>
+
+      <div class="link-row">
+        Already have an account? <a onclick="go('login')">Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE: EMAIL VERIFICATION
+══════════════════════════════════════════════ -->
+<div class="page" id="page-verify-email">
+  <div class="center-wrap">
+    <div class="card">
+      <div class="brand">SmartPythonists</div>
+      <h1>Verify email</h1>
+      <p class="subtitle" id="verify-subtitle">Enter the 6-digit code sent to your email</p>
+
+      <div class="alert alert-error" id="verify-err"></div>
+      <div class="alert alert-success" id="verify-ok"></div>
+
+      <div class="otp-wrap" id="otp-inputs">
+        <input type="text" maxlength="1" oninput="otpNext(this,0)" onkeydown="otpBack(event,0)">
+        <input type="text" maxlength="1" oninput="otpNext(this,1)" onkeydown="otpBack(event,1)">
+        <input type="text" maxlength="1" oninput="otpNext(this,2)" onkeydown="otpBack(event,2)">
+        <input type="text" maxlength="1" oninput="otpNext(this,3)" onkeydown="otpBack(event,3)">
+        <input type="text" maxlength="1" oninput="otpNext(this,4)" onkeydown="otpBack(event,4)">
+        <input type="text" maxlength="1" oninput="otpNext(this,5)" onkeydown="otpBack(event,5)">
+      </div>
+
+      <br>
+      <button class="btn btn-primary" id="verify-btn" onclick="doVerifyEmail()">Verify Email</button>
+
+      <div class="divider">or</div>
+
+      <button class="btn btn-ghost" id="resend-btn" onclick="doResendEmail()">Resend Code</button>
+
+      <div class="link-row" style="margin-top:16px;">
+        <a onclick="go('login')">← Back to login</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE: FORGOT PASSWORD
+══════════════════════════════════════════════ -->
+<div class="page" id="page-forgot">
+  <div class="center-wrap">
+    <div class="card">
+      <div class="brand">SmartPythonists</div>
+      <h1>Reset password</h1>
+      <p class="subtitle">Enter your email to receive a reset code</p>
+
+      <div class="alert alert-error" id="forgot-err"></div>
+      <div class="alert alert-success" id="forgot-ok"></div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="forgot-email" placeholder="you@example.com">
+      </div>
+
+      <button class="btn btn-primary" id="forgot-btn" onclick="doForgotRequest()">Send Reset Code</button>
+
+      <div class="link-row">
+        <a onclick="go('login')">← Back to login</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE: VERIFY RESET OTP
+══════════════════════════════════════════════ -->
+<div class="page" id="page-reset-verify">
+  <div class="center-wrap">
+    <div class="card">
+      <div class="brand">SmartPythonists</div>
+      <h1>Enter reset code</h1>
+      <p class="subtitle">6-digit code sent to your email</p>
+
+      <div class="alert alert-error" id="rv-err"></div>
+      <div class="alert alert-success" id="rv-ok"></div>
+
+      <div class="otp-wrap" id="rv-otp-inputs">
+        <input type="text" maxlength="1" oninput="otpNextId(this,0,'rv-otp-inputs')" onkeydown="otpBackId(event,0,'rv-otp-inputs')">
+        <input type="text" maxlength="1" oninput="otpNextId(this,1,'rv-otp-inputs')" onkeydown="otpBackId(event,1,'rv-otp-inputs')">
+        <input type="text" maxlength="1" oninput="otpNextId(this,2,'rv-otp-inputs')" onkeydown="otpBackId(event,2,'rv-otp-inputs')">
+        <input type="text" maxlength="1" oninput="otpNextId(this,3,'rv-otp-inputs')" onkeydown="otpBackId(event,3,'rv-otp-inputs')">
+        <input type="text" maxlength="1" oninput="otpNextId(this,4,'rv-otp-inputs')" onkeydown="otpBackId(event,4,'rv-otp-inputs')">
+        <input type="text" maxlength="1" oninput="otpNextId(this,5,'rv-otp-inputs')" onkeydown="otpBackId(event,5,'rv-otp-inputs')">
+      </div>
+      <br>
+      <button class="btn btn-primary" id="rv-btn" onclick="doVerifyResetOtp()">Verify Code</button>
+
+      <div class="link-row" style="margin-top:16px;">
+        <a onclick="go('forgot')">← Resend code</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE: NEW PASSWORD
+══════════════════════════════════════════════ -->
+<div class="page" id="page-reset-confirm">
+  <div class="center-wrap">
+    <div class="card">
+      <div class="brand">SmartPythonists</div>
+      <h1>New password</h1>
+      <p class="subtitle">Choose a strong new password</p>
+
+      <div class="alert alert-error" id="rc-err"></div>
+      <div class="alert alert-success" id="rc-ok"></div>
+
+      <div class="field">
+        <label>New Password</label>
+        <div class="input-wrap">
+          <input type="password" id="rc-pass" placeholder="••••••••" oninput="checkStrengthId('rc-pass','rc-strength-fill','rc-strength-label')">
+          <span class="input-icon" onclick="toggleVis('rc-pass',this)">👁</span>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="rc-strength-fill"></div></div>
+        <div class="strength-label" id="rc-strength-label"></div>
+      </div>
+      <div class="field">
+        <label>Confirm New Password</label>
+        <div class="input-wrap">
+          <input type="password" id="rc-pass2" placeholder="••••••••">
+          <span class="input-icon" onclick="toggleVis('rc-pass2',this)">👁</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="rc-btn" onclick="doResetConfirm()">Set New Password</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE: PROFILE / DASHBOARD
+══════════════════════════════════════════════ -->
+<div class="page" id="page-profile">
+  <div class="dashboard-wrap">
+
+    <div class="profile-header">
+      <div class="avatar" id="profile-avatar">?</div>
+      <div class="profile-info">
+        <h2 id="profile-username">—</h2>
+        <p id="profile-email">—</p>
+      </div>
+    </div>
+
+    <!-- Profile Info -->
+    <div class="section-card">
+      <div class="section-title">Profile Information</div>
+      <div class="alert alert-error" id="profile-err"></div>
+      <div class="alert alert-success" id="profile-ok"></div>
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="pu-username" placeholder="Username">
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="pu-phone" placeholder="+1 234 567 8900">
+      </div>
+      <button class="btn btn-primary" onclick="doProfileUpdate()" style="max-width:180px;">Save Changes</button>
+    </div>
+
+    <!-- Change Email -->
+    <div class="section-card">
+      <div class="section-title">Change Email</div>
+      <div class="alert alert-error" id="email-change-err"></div>
+      <div class="alert alert-success" id="email-change-ok"></div>
+      <div class="field">
+        <label>New Email</label>
+        <input type="email" id="new-email" placeholder="new@example.com">
+      </div>
+      <button class="btn btn-ghost" onclick="doEmailChange()" style="max-width:200px;">Update Email</button>
+    </div>
+
+    <!-- Change Password -->
+    <div class="section-card">
+      <div class="section-title">Change Password</div>
+      <div class="alert alert-error" id="pass-change-err"></div>
+      <div class="alert alert-success" id="pass-change-ok"></div>
+      <div class="field">
+        <label>Current Password</label>
+        <div class="input-wrap">
+          <input type="password" id="cp-current" placeholder="••••••••">
+          <span class="input-icon" onclick="toggleVis('cp-current',this)">👁</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>New Password</label>
+        <div class="input-wrap">
+          <input type="password" id="cp-new" placeholder="••••••••" oninput="checkStrengthId('cp-new','cp-strength-fill','cp-strength-label')">
+          <span class="input-icon" onclick="toggleVis('cp-new',this)">👁</span>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="cp-strength-fill"></div></div>
+        <div class="strength-label" id="cp-strength-label"></div>
+      </div>
+      <div class="field">
+        <label>Confirm New Password</label>
+        <div class="input-wrap">
+          <input type="password" id="cp-new2" placeholder="••••••••">
+          <span class="input-icon" onclick="toggleVis('cp-new2',this)">👁</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost" onclick="doPasswordChange()" style="max-width:220px;">Update Password</button>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="section-card" style="border-color: rgba(255,68,102,0.2);">
+      <div class="section-title" style="color: var(--danger);">Session Management</div>
+      <p style="color:var(--muted); font-size:13.5px; margin-bottom:16px; line-height:1.6;">
+        Logging out will end your current session. "Logout All Devices" will invalidate all active sessions across every device.
+      </p>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="doLogout()">Logout This Device</button>
+        <button class="btn btn-danger" onclick="logoutAll()">Logout All Devices</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE: LOGOUT CONFIRM
+══════════════════════════════════════════════ -->
+<div class="page" id="page-logout">
+  <div class="center-wrap">
+    <div class="card" style="text-align:center;">
+      <div style="font-size:48px; margin-bottom:16px;">👋</div>
+      <h1 style="font-size:24px;">See you soon</h1>
+      <p class="subtitle">You have been logged out successfully.</p>
+      <button class="btn btn-primary" onclick="go('login')" style="margin-top:8px;">Back to Login</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+const API = 'http://127.0.0.1:8000/api/auth'
+
+// ── State ──────────────────────────────────────
+let state = {
+  pendingEmail: '',
+  resetEmail:   '',
+  resetToken:   '',
+}
+
+// ── Router ─────────────────────────────────────
+function go(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.getElementById('page-' + page).classList.add('active')
+  const isAuthed = !!localStorage.getItem('access')
+  document.getElementById('navbar').style.display = (isAuthed && page === 'profile') ? 'flex' : 'none'
+  window.scrollTo(0, 0)
+}
+
+// ── Helpers ────────────────────────────────────
+function setBtn(id, loading, text) {
+  const btn = document.getElementById(id)
+  btn.disabled = loading
+  btn.innerHTML = loading ? `<span class="spinner"></span>${text}` : text
+}
+
+function showAlert(id, msg, type = 'error') {
+  const el = document.getElementById(id)
+  el.className = `alert alert-${type} show`
+  el.innerHTML = msg
+}
+
+function hideAlert(id) {
+  const el = document.getElementById(id)
+  if (el) { el.className = 'alert'; el.innerHTML = ''; }
+}
+
+function getOtp(wrapperId) {
+  return Array.from(document.querySelectorAll(`#${wrapperId} input`))
+              .map(i => i.value).join('')
+}
+
+function clearOtp(wrapperId) {
+  document.querySelectorAll(`#${wrapperId} input`).forEach(i => i.value = '')
+  document.querySelector(`#${wrapperId} input`).focus()
+}
+
+function toggleVis(id, icon) {
+  const f = document.getElementById(id)
+  f.type = f.type === 'password' ? 'text' : 'password'
+  icon.textContent = f.type === 'password' ? '👁' : '🙈'
+}
+
+function parseErrors(data) {
+  if (typeof data === 'string') return data
+  if (data.detail) return data.detail
+  if (data.non_field_errors) return data.non_field_errors.join('<br>')
+  const msgs = []
+  for (const [k, v] of Object.entries(data)) {
+    msgs.push(`<b>${k}:</b> ${Array.isArray(v) ? v.join(', ') : v}`)
+  }
+  return msgs.join('<br>') || 'An error occurred.'
+}
+
+async function api(endpoint, body, token = null) {
+  const headers = { 'Content-Type': 'application/json' }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${API}${endpoint}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  })
+  const data = await res.json().catch(() => ({}))
+  return { ok: res.ok, status: res.status, data }
+}
+
+async function apiGet(endpoint, token) {
+  const res = await fetch(`${API}${endpoint}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  const data = await res.json().catch(() => ({}))
+  return { ok: res.ok, data }
+}
+
+async function apiPut(endpoint, body, token) {
+  const res = await fetch(`${API}${endpoint}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(body)
+  })
+  const data = await res.json().catch(() => ({}))
+  return { ok: res.ok, data }
+}
+
+// ── OTP navigation ─────────────────────────────
+function otpNext(el, idx) {
+  otpNextId(el, idx, 'otp-inputs')
+}
+function otpBack(e, idx) {
+  otpBackId(e, idx, 'otp-inputs')
+}
+function otpNextId(el, idx, wrapperId) {
+  el.value = el.value.replace(/\D/g, '')
+  if (el.value) {
+    const inputs = document.querySelectorAll(`#${wrapperId} input`)
+    if (idx < 5) inputs[idx + 1].focus()
+  }
+}
+function otpBackId(e, idx, wrapperId) {
+  if (e.key === 'Backspace') {
+    const inputs = document.querySelectorAll(`#${wrapperId} input`)
+    if (!inputs[idx].value && idx > 0) inputs[idx - 1].focus()
+  }
+}
+
+// ── Password strength ──────────────────────────
+function checkStrength(el) {
+  checkStrengthId(el.id, 'strength-fill', 'strength-label')
+}
+function checkStrengthId(inputId, fillId, labelId) {
+  const val = document.getElementById(inputId).value
+  let score = 0
+  if (val.length >= 8)           score++
+  if (/[A-Z]/.test(val))        score++
+  if (/[0-9]/.test(val))        score++
+  if (/[^A-Za-z0-9]/.test(val)) score++
+
+  const fill  = document.getElementById(fillId)
+  const label = document.getElementById(labelId)
+  const map   = [
+    { w:'0%',   c:'transparent', t:'' },
+    { w:'25%',  c:'#ff4466',     t:'Weak' },
+    { w:'50%',  c:'#ffaa00',     t:'Fair' },
+    { w:'75%',  c:'#00d4ff',     t:'Good' },
+    { w:'100%', c:'#00e5a0',     t:'Strong' },
+  ]
+  fill.style.width      = map[score].w
+  fill.style.background = map[score].c
+  label.textContent     = map[score].t
+  label.style.color     = map[score].c
+}
+
+// ══════════════════════════════════════════════
+// AUTH ACTIONS
+// ══════════════════════════════════════════════
+
+// ── Register ───────────────────────────────────
+async function doRegister() {
+  hideAlert('reg-err'); hideAlert('reg-ok')
+  const username = document.getElementById('reg-username').value.trim()
+  const email    = document.getElementById('reg-email').value.trim()
+  const phone    = document.getElementById('reg-phone').value.trim()
+  const password = document.getElementById('reg-pass').value
+  const password_confirm = document.getElementById('reg-pass2').value
+
+  if (!username || !email || !password) return showAlert('reg-err', 'Please fill all required fields.')
+  if (password !== password_confirm) return showAlert('reg-err', 'Passwords do not match.')
+
+  setBtn('reg-btn', true, 'Creating account...')
+  const { ok, data } = await api('/register/', { username, email, phone, password, password_confirm })
+  setBtn('reg-btn', false, 'Create Account')
+
+  if (ok) {
+    state.pendingEmail = email
+    showAlert('reg-ok', '✓ Account created! Check your email for the verification code.', 'success')
+    setTimeout(() => {
+      document.getElementById('verify-subtitle').textContent = `Enter the 6-digit code sent to ${email}`
+      go('verify-email')
+    }, 1500)
+  } else {
+    showAlert('reg-err', parseErrors(data))
+  }
+}
+
+// ── Login ──────────────────────────────────────
+async function doLogin() {
+  hideAlert('login-err'); hideAlert('login-ok')
+  const email    = document.getElementById('login-email').value.trim()
+  const password = document.getElementById('login-pass').value
+  if (!email || !password) return showAlert('login-err', 'Email and password are required.')
+
+  setBtn('login-btn', true, 'Signing in...')
+  const { ok, data } = await api('/login/', { email, password })
+  setBtn('login-btn', false, 'Sign In')
+
+  if (ok) {
+    localStorage.setItem('access',   data.tokens.access)
+    localStorage.setItem('refresh',  data.tokens.refresh)
+    localStorage.setItem('username', data.user.username)
+    localStorage.setItem('email',    data.user.email)
+    showAlert('login-ok', '✓ Logged in!', 'success')
+    setTimeout(() => loadProfile(), 800)
+  } else {
+    if (data.non_field_errors && data.non_field_errors[0].includes('not Verified')) {
+      state.pendingEmail = email
+      showAlert('login-err', 'Email not verified. <a class="link" onclick="go(\'verify-email\')">Verify now →</a>')
+    } else {
+      showAlert('login-err', parseErrors(data))
+    }
+  }
+}
+
+// ── Email Verification ─────────────────────────
+async function doVerifyEmail() {
+  hideAlert('verify-err'); hideAlert('verify-ok')
+  const otp   = getOtp('otp-inputs')
+  const email = state.pendingEmail
+
+  if (otp.length < 6) return showAlert('verify-err', 'Enter the full 6-digit code.')
+  if (!email) return showAlert('verify-err', 'Session lost. Please register again.')
+
+  setBtn('verify-btn', true, 'Verifying...')
+  const { ok, data } = await api('/verify-email/', { email, otp })
+  setBtn('verify-btn', false, 'Verify Email')
+
+  if (ok) {
+    showAlert('verify-ok', '✓ Email verified! You can now log in.', 'success')
+    setTimeout(() => go('login'), 1800)
+  } else {
+    clearOtp('otp-inputs')
+    showAlert('verify-err', parseErrors(data))
+  }
+}
+
+async function doResendEmail() {
+  hideAlert('verify-err'); hideAlert('verify-ok')
+  if (!state.pendingEmail) return showAlert('verify-err', 'No email on record. Please register again.')
+
+  setBtn('resend-btn', true, 'Sending...')
+  const { ok, data } = await api('/resend-email/', { email: state.pendingEmail })
+  setBtn('resend-btn', false, 'Resend Code')
+
+  if (ok) {
+    showAlert('verify-ok', '✓ New code sent to your email.', 'success')
+  } else {
+    showAlert('verify-err', parseErrors(data))
+  }
+}
+
+// ── Forgot Password ────────────────────────────
+async function doForgotRequest() {
+  hideAlert('forgot-err'); hideAlert('forgot-ok')
+  const email = document.getElementById('forgot-email').value.trim()
+  if (!email) return showAlert('forgot-err', 'Please enter your email.')
+
+  setBtn('forgot-btn', true, 'Sending...')
+  const { ok, data } = await api('/password-reset/', { email })
+  setBtn('forgot-btn', false, 'Send Reset Code')
+
+  if (ok) {
+    state.resetEmail = email
+    showAlert('forgot-ok', '✓ Reset code sent! Check your inbox.', 'success')
+    setTimeout(() => go('reset-verify'), 1500)
+  } else {
+    showAlert('forgot-err', parseErrors(data))
+  }
+}
+
+async function doVerifyResetOtp() {
+  hideAlert('rv-err'); hideAlert('rv-ok')
+  const otp = getOtp('rv-otp-inputs')
+  if (otp.length < 6) return showAlert('rv-err', 'Enter the full 6-digit code.')
+
+  setBtn('rv-btn', true, 'Verifying...')
+  const { ok, data } = await api('/password-reset-verify/', { email: state.resetEmail, otp })
+  setBtn('rv-btn', false, 'Verify Code')
+
+  if (ok) {
+    state.resetToken = data.reset_token
+    showAlert('rv-ok', '✓ Code verified!', 'success')
+    setTimeout(() => go('reset-confirm'), 1000)
+  } else {
+    clearOtp('rv-otp-inputs')
+    showAlert('rv-err', parseErrors(data))
+  }
+}
+
+async function doResetConfirm() {
+  hideAlert('rc-err'); hideAlert('rc-ok')
+  const password         = document.getElementById('rc-pass').value
+  const password_confirm = document.getElementById('rc-pass2').value
+  if (!password) return showAlert('rc-err', 'Enter a new password.')
+  if (password !== password_confirm) return showAlert('rc-err', 'Passwords do not match.')
+
+  setBtn('rc-btn', true, 'Saving...')
+  const { ok, data } = await api('/password-reset-confirm/', {
+    token: state.resetToken, password, password_confirm
+  })
+  setBtn('rc-btn', false, 'Set New Password')
+
+  if (ok) {
+    showAlert('rc-ok', '✓ Password changed! You can now log in.', 'success')
+    setTimeout(() => go('login'), 1800)
+  } else {
+    showAlert('rc-err', parseErrors(data))
+  }
+}
+
+// ── Profile ─────────────────────────────────────
+async function loadProfile() {
+  const token = localStorage.getItem('access')
+  if (!token) return go('login')
+
+  const { ok, data } = await apiGet('/profile/', token)
+  if (ok) {
+    document.getElementById('profile-username').textContent = data.username
+    document.getElementById('profile-email').textContent    = data.email
+    document.getElementById('profile-avatar').textContent   = data.username[0].toUpperCase()
+    document.getElementById('pu-username').value = data.username
+    document.getElementById('pu-phone').value    = data.phone || ''
+    go('profile')
+  } else {
+    localStorage.clear()
+    go('login')
+  }
+}
+
+async function doProfileUpdate() {
+  hideAlert('profile-err'); hideAlert('profile-ok')
+  const token    = localStorage.getItem('access')
+  const username = document.getElementById('pu-username').value.trim()
+  const phone    = document.getElementById('pu-phone').value.trim()
+
+  const { ok, data } = await apiPut('/profile/', { username, phone }, token)
+  if (ok) {
+    showAlert('profile-ok', '✓ Profile updated.', 'success')
+    document.getElementById('profile-username').textContent = username
+    document.getElementById('profile-avatar').textContent   = username[0].toUpperCase()
+    localStorage.setItem('username', username)
+  } else {
+    showAlert('profile-err', parseErrors(data))
+  }
+}
+
+async function doEmailChange() {
+  hideAlert('email-change-err'); hideAlert('email-change-ok')
+  const token = localStorage.getItem('access')
+  const email = document.getElementById('new-email').value.trim()
+  if (!email) return showAlert('email-change-err', 'Enter a new email address.')
+
+  const { ok, data } = await apiPut('/profile/', { email }, token)
+  if (ok) {
+    showAlert('email-change-ok', '✓ Email updated. You may need to verify the new address.', 'success')
+    document.getElementById('profile-email').textContent = email
+    localStorage.setItem('email', email)
+    document.getElementById('new-email').value = ''
+  } else {
+    showAlert('email-change-err', parseErrors(data))
+  }
+}
+
+async function doPasswordChange() {
+  hideAlert('pass-change-err'); hideAlert('pass-change-ok')
+  const token    = localStorage.getItem('access')
+  const current  = document.getElementById('cp-current').value
+  const password = document.getElementById('cp-new').value
+  const password_confirm = document.getElementById('cp-new2').value
+
+  if (!current || !password) return showAlert('pass-change-err', 'All fields required.')
+  if (password !== password_confirm) return showAlert('pass-change-err', 'New passwords do not match.')
+
+  const { ok, data } = await api('/password-change/', { current_password: current, password, password_confirm }, token)
+  if (ok) {
+    showAlert('pass-change-ok', '✓ Password changed.', 'success')
+    document.getElementById('cp-current').value = ''
+    document.getElementById('cp-new').value     = ''
+    document.getElementById('cp-new2').value    = ''
+  } else {
+    showAlert('pass-change-err', parseErrors(data))
+  }
+}
+
+// ── Logout ─────────────────────────────────────
+async function doLogout() {
+  const refresh = localStorage.getItem('refresh')
+  const token   = localStorage.getItem('access')
+  if (refresh) {
+    await api('/logout/', { refresh }, token).catch(() => {})
+  }
+  localStorage.clear()
+  go('logout')
+}
+
+async function logoutAll() {
+  const token = localStorage.getItem('access')
+  if (token) {
+    await api('/logout-all/', {}, token).catch(() => {})
+  }
+  localStorage.clear()
+  go('logout')
+}
+
+// ── Init ───────────────────────────────────────
+if (localStorage.getItem('access')) {
+  loadProfile()
+} else {
+  go('login')
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,375 @@
+<?php
+// REMOVED - PHP not needed, Django handles this
+?>
+
+<section style="
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:90vh;
+padding:20px;
+background:linear-gradient(to bottom,#000000,#001133);
+">
+
+<div style="
+background:rgba(0,60,120,0.85);
+padding:40px 30px;
+border-radius:20px;
+width:100%;
+max-width:420px;
+box-shadow:0 10px 25px rgba(0,0,0,0.5);
+color:#fff;
+backdrop-filter:blur(10px);
+text-align:center;
+">
+
+<h2 style="color:#4da6ff;margin-bottom:25px;font-size:28px;">Create Account</h2>
+
+<form method="POST" action="register.php" onsubmit="handleRegister(event)">
+
+<div style="margin-bottom:18px;text-align:left;">
+<label style="display:block;margin-bottom:6px;font-weight:bold;color:#cce0ff;">Full Name</label>
+<input type="text" id="name" name="name" required placeholder="Your name"
+style="width:100%;padding:12px;border-radius:10px;border:none;background:rgba(255,255,255,0.1);color:white;">
+
+<small id="nameError" style="color:#ff8080;"></small>
+
+</div>
+
+<div style="margin-bottom:18px;text-align:left;">
+<label style="display:block;margin-bottom:6px;font-weight:bold;color:#cce0ff;">Email</label>
+<input type="email" id="email" name="email" required placeholder="Your email"
+style="width:100%;padding:12px;border-radius:10px;border:none;background:rgba(255,255,255,0.1);color:white;">
+
+<small id="emailError" style="color:#ff8080;"></small>
+<small id="emailStatus" style="color:#90ee90;"></small>
+
+
+</div>
+
+<div style="margin-bottom:18px;text-align:left;position:relative;">
+<label style="display:block;margin-bottom:6px;font-weight:bold;color:#cce0ff;">Password</label>
+<input type="password" id="password" name="password" required placeholder="Create password"
+style="width:100%;padding:12px;border-radius:10px;border:none;background:rgba(255,255,255,0.1);color:white;">
+
+<small id="passwordError" style="color:#ff8080;"></small>
+<div id="strengthBar" style="
+height:6px;
+width:0%;
+background:red;
+border-radius:5px;
+margin-top:6px;
+transition:0.3s;
+"></div>
+<span onclick="togglePassword()" 
+style="
+position:absolute;
+right:12px;
+top: 33px;
+cursor:pointer;
+font-size:18px;
+color:#cce0ff;
+">👁</span>
+
+</div>
+
+<!-- CONFIRM PASSWORD — added to match Django backend -->
+<div style="margin-bottom:18px;text-align:left;position:relative;">
+<label style="display:block;margin-bottom:6px;font-weight:bold;color:#cce0ff;">Confirm Password</label>
+<input type="password" id="password_confirm" name="password_confirm" required placeholder="Repeat password"
+style="width:100%;padding:12px;border-radius:10px;border:none;background:rgba(255,255,255,0.1);color:white;">
+
+<small id="confirmError" style="color:#ff8080;"></small>
+<span onclick="toggleConfirm()" 
+style="
+position:absolute;
+right:12px;
+top: 33px;
+cursor:pointer;
+font-size:18px;
+color:#cce0ff;
+">👁</span>
+</div>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function(){
+const emailStatus = document.getElementById("emailStatus");
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const confirmInput = document.getElementById("password_confirm");
+
+const nameError = document.getElementById("nameError");
+const emailError = document.getElementById("emailError");
+const passwordError = document.getElementById("passwordError");
+const confirmError = document.getElementById("confirmError");
+
+const strengthBar = document.getElementById("strengthBar");
+const registerBtn = document.getElementById("registerBtn");
+
+registerBtn.disabled = true;
+
+function checkForm(){
+if(
+nameError.innerText === "" &&
+emailError.innerText === "" &&
+passwordError.innerText === "" &&
+confirmError.innerText === "" &&
+nameInput.value !== "" &&
+emailInput.value !== "" &&
+passwordInput.value !== "" &&
+confirmInput.value !== ""
+){
+registerBtn.disabled = false;
+}else{
+registerBtn.disabled = true;
+}
+}
+
+
+// NAME VALIDATION
+nameInput.addEventListener("input", function(){
+
+if(nameInput.value.trim().length < 3){
+nameError.innerText = "Name must be at least 3 characters";
+}else{
+nameError.innerText = "";
+}
+
+checkForm();
+
+});
+
+
+// EMAIL VALIDATION
+emailInput.addEventListener("input", function(){
+
+let pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if(!pattern.test(emailInput.value)){
+emailError.innerText = "Enter a valid email address";
+emailStatus.innerText = "";
+checkForm();
+return;
+}
+
+emailError.innerText = "";
+
+// AJAX REQUEST
+fetch("http://127.0.0.1:8000/api/auth/check/email/",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body: JSON.stringify({email:emailInput.value})
+})
+.then(res=>res.json())
+.then(data=>{
+
+if(!data.available){
+    emailStatus.style.color="#ff8080";
+    emailStatus.innerText="Email already registered";
+
+}else {
+    emailStatus.style.color="#90ee90";
+    emailStatus.innerText="✓ Email available"
+}
+
+checkForm();
+
+});
+
+});
+
+
+// PASSWORD VALIDATION + STRENGTH
+passwordInput.addEventListener("input", function(){
+
+let password = passwordInput.value;
+
+let strength = 0;
+let message = "";
+
+if(password.length >= 8) strength++;
+if(/[A-Z]/.test(password)) strength++;
+if(/[0-9]/.test(password)) strength++;
+if(/[\W]/.test(password)) strength++;
+
+if(password.length < 8){
+message = "Password must be at least 8 characters";
+}
+
+passwordError.innerText = message;
+
+
+// PASSWORD STRENGTH BAR
+if(strength === 1){
+strengthBar.style.width = "25%";
+strengthBar.style.background = "red";
+}
+else if(strength === 2){
+strengthBar.style.width = "50%";
+strengthBar.style.background = "orange";
+}
+else if(strength === 3){
+strengthBar.style.width = "75%";
+strengthBar.style.background = "yellow";
+}
+else if(strength === 4){
+strengthBar.style.width = "100%";
+strengthBar.style.background = "lime";
+}
+else{
+strengthBar.style.width = "0%";
+}
+
+// Re-check confirm if already typed
+if(confirmInput.value){
+validateConfirm();
+}
+
+checkForm();
+
+});
+
+
+// CONFIRM PASSWORD VALIDATION
+confirmInput.addEventListener("input", function(){
+validateConfirm();
+checkForm();
+});
+
+function validateConfirm(){
+if(confirmInput.value !== passwordInput.value){
+confirmError.innerText = "Passwords do not match";
+}else{
+confirmError.innerText = "";
+}
+}
+
+});
+
+
+// SHOW / HIDE PASSWORD
+function togglePassword(){
+
+var field = document.getElementById("password");
+
+if(field.type === "password"){
+field.type = "text";
+}else{
+field.type = "password";
+}
+
+}
+
+// SHOW / HIDE CONFIRM PASSWORD
+function toggleConfirm(){
+
+var field = document.getElementById("password_confirm");
+
+if(field.type === "password"){
+field.type = "text";
+}else{
+field.type = "password";
+}
+
+}
+
+
+// SUBMIT TO DJANGO API
+async function handleRegister(event){
+event.preventDefault();
+
+const payload = {
+    username:         document.getElementById("name").value.trim(),
+    email:            document.getElementById("email").value.trim(),
+    password:         document.getElementById("password").value,
+    password_confirm: document.getElementById("password_confirm").value,
+}
+
+try {
+    const res = await fetch("http://127.0.0.1:8000/api/auth/register/", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(payload)
+    })
+
+    const data = await res.json()
+
+    if(res.ok){
+        localStorage.setItem("pending_email", payload.email)
+        window.location.href = "verify-email.php"
+    } else {
+        // Show Django errors on the right fields
+        if(data.username)         document.getElementById("nameError").innerText    = data.username[0]
+        if(data.email)            document.getElementById("emailError").innerText   = data.email[0]
+        if(data.password)         document.getElementById("passwordError").innerText = data.password[0]
+        if(data.password_confirm) document.getElementById("confirmError").innerText = data.password_confirm[0]
+        if(data.non_field_errors) alert(data.non_field_errors[0])
+    }
+
+} catch(err) {
+    alert("Network error. Please try again.")
+}
+
+}
+
+</script>
+
+<button id="registerBtn" type="submit"
+style="
+width:100%;
+padding:12px;
+background:#4da6ff;
+border:none;
+border-radius:12px;
+font-size:17px;
+font-weight:bold;
+color:white;
+cursor:pointer;
+">
+Register
+</button>
+<div style="margin-top:20px;">
+
+<p style="color:#cce0ff;margin-bottom:10px;">Or sign up with</p>
+
+<button style="
+width:100%;
+padding:10px;
+margin-bottom:10px;
+border:none;
+border-radius:10px;
+background:#ffffff;
+color:#000;
+font-weight:bold;
+cursor:pointer;
+">
+Sign up with Google
+</button>
+
+<button style="
+width:100%;
+padding:10px;
+border:none;
+border-radius:10px;
+background:#1877f2;
+color:#fff;
+font-weight:bold;
+cursor:pointer;
+">
+Sign up with Facebook
+</button>
+
+</div>
+</form>
+
+<p style="margin-top:15px;color:#cce0ff;">
+Already have an account?
+<a href="login.php" style="color:#4da6ff;font-weight:bold;">Login</a>
+</p>
+
+</div>
+</section>
