@@ -1,280 +1,272 @@
-from django.shortcuts import render
-from django.db import transaction
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from .verification import Verification
-from apps.authe.utils import send_otp_email
-from apps.authe.serializers import (
-    EmailVerificationSerializer,EmailresendSerializer,RegisterSerializer,
-    PhoneVerificationSerializer,phoneresendSerializer,LoginSerializer,
-    PasswordResetOtpReqeuest,PasswordResetSerializer,PasswordOtpVerifySerializer,
-    ProfileViewSerializer,CheckEmailSerializer,LogoutAllSerializer)
+import logging
+import threading
 import traceback
+
 from django.contrib.auth import get_user_model
-User=get_user_model()
+from django.db import transaction
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.exceptions import TokenError,InvalidToken
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
+
+from apps.authe.serializers import (
+    CheckEmailSerializer,
+    EmailResendSerializer,
+    EmailVerificationSerializer,
+    LoginSerializer,
+    LogoutAllSerializer,
+    PasswordOtpVerifySerializer,
+    PasswordResetOtpRequestSerializer,
+    PasswordResetSerializer,
+    ProfileUpdateSerializer,
+    ProfileViewSerializer,
+    RegisterSerializer,
+)
+from apps.authe.utils import send_otp_email, send_reset_otp_email
+from apps.authe.verification import Verification
+
+User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
+def _send_email_async(target, *args, **kwargs):
+    """Fire-and-forget email in a background thread so the response is instant."""
+    thread = threading.Thread(target=target, args=args, kwargs=kwargs, daemon=True)
+    thread.start()
+
+
+# ── Register ───────────────────────────────────────────────────────────────
 class RegisterView(APIView):
-    permission_classes=[AllowAny]
-    def post(self,request):
-        serializer=RegisterSerializer(data=request.data,context={"request":request})
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data, context={"request": request})
         try:
             if serializer.is_valid():
                 with transaction.atomic():
-                    user=serializer.save()
-                    email=user.email
-                    otp=Verification.generate_email_otp(email)
-                    send_otp_email(user.email,otp,username=user.username)
-                return Response({
-                    "message":"Registration as executed successfully,used the code sent to your email for email verification"
-                },status=status.HTTP_201_CREATED)
-            return Response(serializer.errors,status.HTTP_400_BAD_REQUEST)    
+                    user = serializer.save()
+                    otp  = Verification.generate_email_otp(user.email)
+
+                # Send email OUTSIDE the transaction and in background
+                _send_email_async(send_otp_email, user.email, otp, username=user.username)
+
+                return Response(
+                    {"message": "Registration successful. Check your email for the verification code."},
+                    status=status.HTTP_201_CREATED,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({
-                "error":str(e),
-                "traceback":traceback.format_exc()
-            },status=status.HTTP_400_BAD_REQUEST)
-            
+            logger.exception("RegisterView error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ── Email Verification ─────────────────────────────────────────────────────
 class EmailVerificationView(APIView):
-    permission_classes=[AllowAny]
-    def post(self,request):
-        serializer=EmailVerificationSerializer(data=request.data)
-        email=request.data.get("email")
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = EmailVerificationSerializer(data=request.data, context={"request": request})
         try:
             if serializer.is_valid():
-                
-                return Response(serializer.data,status=status.HTTP_200_OK)
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "Email verified successfully."}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({
-                "error":str(e),
-                "traceback":traceback.format_exc()
-            },status=status.HTTP_400_BAD_REQUEST)
+            logger.exception("EmailVerificationView error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+# ── Email OTP Resend ───────────────────────────────────────────────────────
 class EmailResendView(APIView):
-    permission_classes=[AllowAny]
-    def post(self,request):
-        email=request.data.get("email")
-        serializer=EmailVerificationSerializer(data=request.data)
-        try:
-            if serializer.is_valid():
-                user=User.objects.get(email=email)
-                if user.is_email_verified:
-                    return Response("Email already Verified")
-                otp=Verification.generate_email_otp(email)
-                send_otp_email(user.email,otp,user.username)
-                return Response({
-                    "detail":"Execution of code resend was successfull"
-                },status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response(
-                {
-                    "error":str(e),
-                    "traceback":traceback.format_exc()
-                    
-                },status=status.HTTP_400_BAD_REQUEST
-            )       
-            
-class phoneVerificationView(APIView):
-    permission_classes=[AllowAny]
-    def post(self,request):
-        serializer=PhoneVerificationSerializer(data=request.data)
-        email=request.data.get("email")
-        phone=request.data.get("phone")
-        try:
-            if serializer.is_valid():
-                
-                return Response(serializer.data,status=status.HTTP_200_OK)
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                "error":str(e),
-                "traceback":traceback.format_exc()
-            },status=status.HTTP_400_BAD_REQUEST)
-            
+    permission_classes = [AllowAny]
 
-class PhoneResendView(APIView):
-    permission_classes=[AllowAny]
-    def post(self,request):
-        email=request.data.get("email")
-        phone=request.data.get("phone")
-        serializer=PhoneresendSerializer(data=request.data)
+    def post(self, request):
+        serializer = EmailResendSerializer(data=request.data)
         try:
             if serializer.is_valid():
-                user=User.objects.get(email=email)
-                if user.is_phone_verified:
-                    return Response("Phone number already  already Verified")
-                otp=Verification.generate_phone_otp(email)
-                send_otp_phone(user.phone,otp,user.username)
-                return Response({
-                    "detail":"Execution of code resend was successfull"
-                },status=status.HTTP_200_OK)
+                user = serializer.validated_data["user"]
+                otp  = Verification.generate_email_otp(user.email)
+                _send_email_async(send_otp_email, user.email, otp, username=user.username)
+                return Response({"message": "Verification code resent."}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response(
-                {
-                    "error":str(e),
-                    "traceback":traceback.format_exc()
-                    
-                },status=status.HTTP_400_BAD_REQUEST
-            )    
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-@method_decorator(csrf_exempt,name="dispatch")            
+            logger.exception("EmailResendView error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ── Login ──────────────────────────────────────────────────────────────────
 class LoginView(APIView):
     permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={"request": request})
-        import logging
-        logger=logging.getLogger()
-    
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            refresh = RefreshToken.for_user(user)
-            access = refresh.access_token
-            return Response({
-                    "detail": "Login successful",
+        try:
+            if serializer.is_valid():
+                user    = serializer.validated_data["user"]
+                refresh = RefreshToken.for_user(user)
+                access  = refresh.access_token
+                return Response({
+                    "message": "Login successful.",
                     "tokens": {
-                        "access": str(access),
+                        "access":  str(access),
                         "refresh": str(refresh),
                     },
                     "user": {
-                        "username": user.username,
-                        "email": user.email,
-                        "role": user.role,
-                    }
+                        "username":          user.username,
+                        "email":             user.email,
+                        "role":              user.role,
+                        "is_email_verified": user.is_email_verified,
+                    },
                 }, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-class CustomTokenRefreshView(APIView):
-    def post(self,request,*args,**kwargs):
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("LoginView error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ── Token Refresh ──────────────────────────────────────────────────────────
+class CustomTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
         try:
-            response=super().post(request,*args,**kwargs)
+            response = super().post(request, *args, **kwargs)
             return Response({
-                "message":"Token refreshed successfully",
-                "access":response.data["access"],
-                "refresh":reponse.data["refresh"]
-            },status=status.HTTP_200_OK)
-        except (TokenError,InvalidToken) as e:
-            return Response({
-                "error":"Refresh token invalid or expired ,please login again"
-            },status=status.HTTP_400_BAD_REQUEST)
-            
+                "message": "Token refreshed successfully.",
+                "access":  response.data["access"],
+                "refresh": response.data["refresh"],
+            }, status=status.HTTP_200_OK)
+        except (TokenError, InvalidToken):
+            return Response(
+                {"error": "Refresh token is invalid or expired. Please log in again."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+
+# ── Password Reset — Request OTP ───────────────────────────────────────────
 class PasswordResetRequestView(APIView):
-    permission_classes=[AllowAny]
-    def post(self,request):
-        
-        serializer=PasswordResetOtpReqeuest(data=request.data,context={"request":request})
-        try :
-            if serializer.is_valid():
-                return Response({
-                    "message":"otp sent successfully"
-                },status=status.HTTP_200_OK)
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response(
-                {
-                    "error":str(e),
-                    "traceback":traceback.format_exc()
-                },status=status.HTTP_400_BAD_REQUEST
-            )
-class PasswordotpVerifyView(APIView):
-    permission_classes=[AllowAny]
-    def post (self,request):
-        serializer=  PasswordOtpVerifySerializer(data=request.data,context={"request":request})
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetOtpRequestSerializer(data=request.data, context={"request": request})
         try:
             if serializer.is_valid():
-                reset_token=serializer.save()
-                return Response({
-                    "message":"otp verified successfully",
-                    "reset_token":reset_token},status=status.HTTP_200_OK)
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+                user = serializer.validated_data.get("user")
+                otp  = serializer.validated_data.get("otp")
+                # Only send if a real user was found (prevents email enumeration)
+                if user and otp:
+                    _send_email_async(send_reset_otp_email, user.email, otp, user.username)
+                return Response(
+                    {"message": "If this email exists, a reset code has been sent."},
+                    status=status.HTTP_200_OK,
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({
-                "error":str(e),
-                "traceback":traceback.format_exc()
-            },status=status.HTTP_400_BAD_REQUEST)
+            logger.exception("PasswordResetRequestView error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ── Password Reset — Verify OTP ────────────────────────────────────────────
+class PasswordOtpVerifyView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordOtpVerifySerializer(data=request.data, context={"request": request})
+        try:
+            if serializer.is_valid():
+                reset_token = serializer.save()
+                return Response({
+                    "message":     "OTP verified successfully.",
+                    "reset_token": reset_token,
+                }, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("PasswordOtpVerifyView error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ── Password Reset — Set New Password ─────────────────────────────────────
 class PasswordResetConfirmView(APIView):
-    permission_classes=[AllowAny]
-    def post(self,request):
-        serializer=PasswordResetSerializer(data=request.data,context={"request":request})
-        try :
-            if serializer.is_valid():
-                serializer.save()
-                return Response({
-                    "message":"password changed successfully"
-                },status=status.HTTP_200_OK)
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                "error":str(e),
-                "traceback":traceback.format_exc()
-            },status=status.HTTP_400_BAD_REQUEST)
-class PasswordResendView(APIView):
-    permission_classes=[AllowAny]
-    def post(self,request):
-        serializer=PasswordResetOtpReqeuest(data=request.data,context={"request":request})
-        try :
-            if serializer.is_valid():
-                return Response({
-                    "message":"new otp sent successfully"
-                },status=status.HTTP_200_OK)
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response(
-                {
-                    "error":str(e),
-                    "traceback":traceback.format_exc()
-                },status=status.HTTP_400_BAD_REQUEST
-            )
-class CheckEmailView(APIView):
-    permission_classes=[AllowAny]
-    def post(self,request):
-        
-        try :
-            email=request.data.get("email")
-            exists=User.objects.filter(email=email).exists()
-            return Response ({
-                "available":not exists
-            })
-        except Exception as e:
-            return Response(
-                {
-                    "error":str(e),
-                    "traceback":traceback.format_exc()
-                },status=status.HTTP_400_BAD_REQUEST
-            )
-            
-class ProfileView(APIView):
-    permission_classes=[IsAuthenticated]
-    def get(self,request):
-        try :
-            serializer=ProfileViewSerializer(request.user)
-            return Response(serializer.data,status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({
-                "error":str(e),
-                "traceback":traceback.format_exc()
-            })
-            
-    def put(self,data):
-        serializer=ProfileUpdateSerializer(data=request.data)
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetSerializer(data=request.data, context={"request": request})
         try:
             if serializer.is_valid():
                 serializer.save()
-                return Response({"message":"Update successful"},status=status.HTTP_200_ok)
-            
-            return Responses(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-        except Exceptio as e:
-            return Response({
-                "error":str(e),
-                "traceback":traceback.format_exc()
-            })
+                return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("PasswordResetConfirmView error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ── Password Reset OTP Resend ──────────────────────────────────────────────
+class PasswordResendView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetOtpRequestSerializer(data=request.data, context={"request": request})
+        try:
+            if serializer.is_valid():
+                user = serializer.validated_data.get("user")
+                otp  = serializer.validated_data.get("otp")
+                if user and otp:
+                    _send_email_async(send_reset_otp_email, user.email, otp, user.username)
+                return Response({"message": "New reset code sent."}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("PasswordResendView error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ── Check Email Availability ───────────────────────────────────────────────
+class CheckEmailView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            email  = request.data.get("email", "").lower().strip()
+            exists = User.objects.filter(email=email).exists()
+            return Response({"available": not exists}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.exception("CheckEmailView error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ── Profile ────────────────────────────────────────────────────────────────
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            serializer = ProfileViewSerializer(request.user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.exception("ProfileView GET error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def put(self, request):
+        serializer = ProfileUpdateSerializer(request.user, data=request.data, partial=True)
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "Profile updated successfully."}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("ProfileView PUT error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ── Logout All Devices ─────────────────────────────────────────────────────
 class LogoutAllView(APIView):
-    permission_classes=[IsAuthenticated]
-    def post(self,request):
-        serializer=LogoutAllSerializer              
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = LogoutAllSerializer(context={"request": request})
+        try:
+            serializer.save()
+            return Response({"message": "Logged out from all devices."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.exception("LogoutAllView error")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

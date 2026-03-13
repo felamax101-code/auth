@@ -18,10 +18,46 @@ def _remaining_time(lockout, *keys):
     return int(ttl // 60), int(ttl % 60)
 
 
+# ── Register ───────────────────────────────────────────────────────────────
+class RegisterThrottle:
+    email_max = 5
+    ip_max    = 1000
+    lockout   = 120
+
+    def email_key(self, email): return f"register_email_{email}"
+    def ip_key(self, ip):       return f"register_ip_{ip}"
+
+    def get_attempts(self, email, ip):
+        return (
+            cache.get(self.email_key(email), 0),
+            cache.get(self.ip_key(ip), 0),
+        )
+
+    def increment(self, email, ip):
+        email_attempts = cache.get(self.email_key(email), 0)
+        cache.set(self.email_key(email), email_attempts + 1, timeout=self.lockout)
+        ip_attempts = cache.get(self.ip_key(ip), 0)
+        cache.set(self.ip_key(ip), ip_attempts + 1, timeout=self.lockout)
+
+    def clear(self, email, ip):
+        cache.delete(self.email_key(email))
+        cache.delete(self.ip_key(ip))
+
+    def locked(self, email, ip):
+        email_attempts, ip_attempts = self.get_attempts(email, ip)
+        if email_attempts >= self.email_max:
+            mins, secs = _remaining_time(self.lockout, self.email_key(email), self.ip_key(ip))
+            return True, f"Too many registration attempts, try again in {mins}m {secs}s."
+        if ip_attempts >= self.ip_max:
+            mins, secs = _remaining_time(self.lockout, self.email_key(email), self.ip_key(ip))
+            return True, f"Too many attempts from this IP, try again in {mins}m {secs}s."
+        return False, None
+
+
 # ── Login ──────────────────────────────────────────────────────────────────
 class LoginThrottle:
     email_limit = 5
-    ip_limit    = 20
+    ip_limit    = 2000
     lockout     = 120
 
     def email_key(self, email): return f"login_attempts_email_{email}"
@@ -54,14 +90,14 @@ class LoginThrottle:
         return False, None
 
 
-# ── Register ───────────────────────────────────────────────────────────────
-class RegisterThrottle:
+# ── Email Verification ─────────────────────────────────────────────────────
+class EmailVerificationThrottle:
     email_max = 5
-    ip_max    = 10
-    lockout   = 120
+    ip_max    = 1000
+    lockout   = 300
 
-    def email_key(self, email): return f"register_email_{email}"
-    def ip_key(self, ip):       return f"register_ip_{ip}"
+    def email_key(self, email): return f"email_verify_{email}"
+    def ip_key(self, ip):       return f"email_verify_ip_{ip}"
 
     def get_attempts(self, email, ip):
         return (
@@ -73,14 +109,13 @@ class RegisterThrottle:
         email_attempts = cache.get(self.email_key(email), 0)
         cache.set(self.email_key(email), email_attempts + 1, timeout=self.lockout)
         ip_attempts = cache.get(self.ip_key(ip), 0)
-        # BUG WAS HERE: was using email_attempts+1 instead of ip_attempts+1
         cache.set(self.ip_key(ip), ip_attempts + 1, timeout=self.lockout)
 
     def clear(self, email, ip):
         cache.delete(self.email_key(email))
         cache.delete(self.ip_key(ip))
 
-    def locked(self, email, ip):
+    def is_locked(self, email, ip):
         email_attempts, ip_attempts = self.get_attempts(email, ip)
         if email_attempts >= self.email_max:
             mins, secs = _remaining_time(self.lockout, self.email_key(email), self.ip_key(ip))
@@ -94,7 +129,7 @@ class RegisterThrottle:
 # ── Password Reset Request ─────────────────────────────────────────────────
 class ResetThrottle:
     email_max = 3
-    ip_max    = 10
+    ip_max    = 1000
     lockout   = 3600
 
     def email_key(self, email): return f"reset_email_{email}"
@@ -113,7 +148,6 @@ class ResetThrottle:
         cache.set(self.ip_key(ip), ip_attempts + 1, timeout=self.lockout)
 
     def clear(self, email, ip):
-        # BUG WAS HERE: double underscore email__key
         cache.delete(self.email_key(email))
         cache.delete(self.ip_key(ip))
 
@@ -128,53 +162,13 @@ class ResetThrottle:
         return False, None
 
 
-# ── Email Verification ─────────────────────────────────────────────────────
-class EmailVerificationThrottle:
-    email_max = 5
-    ip_max    = 10
-    lockout   = 300
-
-    def email_key(self, email): return f"email_verify_{email}"
-    def ip_key(self, ip):       return f"email_verify_ip_{ip}"
-
-    def get_attempts(self, email, ip):
-        return (
-            cache.get(self.email_key(email), 0),
-            cache.get(self.ip_key(ip), 0),
-        )
-
-    def increment(self, email, ip):
-        email_attempts = cache.get(self.email_key(email), 0)
-        # BUG WAS HERE: typo "tmeout" instead of "timeout"
-        cache.set(self.email_key(email), email_attempts + 1, timeout=self.lockout)
-        ip_attempts = cache.get(self.ip_key(ip), 0)
-        cache.set(self.ip_key(ip), ip_attempts + 1, timeout=self.lockout)
-
-    def clear(self, email, ip):
-        # BUG WAS HERE: double underscore email__key
-        cache.delete(self.email_key(email))
-        cache.delete(self.ip_key(ip))
-
-    def is_locked(self, email, ip):
-        email_attempts, ip_attempts = self.get_attempts(email, ip)
-        if email_attempts >= self.email_max:
-            mins, secs = _remaining_time(self.lockout, self.email_key(email), self.ip_key(ip))
-            return True, f"Too many attempts, try again in {mins}m {secs}s."
-        # BUG WAS HERE: "ip_max" instead of "self.ip_max"
-        if ip_attempts >= self.ip_max:
-            mins, secs = _remaining_time(self.lockout, self.email_key(email), self.ip_key(ip))
-            return True, f"Too many attempts from this IP, try again in {mins}m {secs}s."
-        return False, None
-
-
-# ── OTP / Reset Verify ─────────────────────────────────────────────────────
+# ── OTP Verify ─────────────────────────────────────────────────────────────
 class VerifyThrottle:
     email_max = 3
-    ip_max    = 10
+    ip_max    = 1000
     lockout   = 3600
 
     def email_key(self, email): return f"verify_otp_email_{email}"
-    # BUG WAS HERE: missing "self" in ip_key and get_attempts
     def ip_key(self, ip):       return f"verify_otp_ip_{ip}"
 
     def get_attempts(self, email, ip):
@@ -185,13 +179,11 @@ class VerifyThrottle:
 
     def increment(self, email, ip):
         email_attempts = cache.get(self.email_key(email), 0)
-        # BUG WAS HERE: typo "tmeout"
         cache.set(self.email_key(email), email_attempts + 1, timeout=self.lockout)
         ip_attempts = cache.get(self.ip_key(ip), 0)
         cache.set(self.ip_key(ip), ip_attempts + 1, timeout=self.lockout)
 
     def clear(self, email, ip):
-        # BUG WAS HERE: double underscore email__key
         cache.delete(self.email_key(email))
         cache.delete(self.ip_key(ip))
 
@@ -200,7 +192,6 @@ class VerifyThrottle:
         if email_attempts >= self.email_max:
             mins, secs = _remaining_time(self.lockout, self.email_key(email), self.ip_key(ip))
             return True, f"Too many attempts, try again in {mins}m {secs}s."
-        # BUG WAS HERE: "ip_max" instead of "self.ip_max"
         if ip_attempts >= self.ip_max:
             mins, secs = _remaining_time(self.lockout, self.email_key(email), self.ip_key(ip))
             return True, f"Too many attempts from this IP, try again in {mins}m {secs}s."
@@ -210,7 +201,7 @@ class VerifyThrottle:
 # ── Password Reset Confirm ─────────────────────────────────────────────────
 class ResetConfirmThrottle:
     token_max = 3
-    ip_max    = 10
+    ip_max    = 1000
     lockout   = 3600
 
     def token_key(self, token): return f"reset_confirm_token_{token}"
@@ -229,7 +220,6 @@ class ResetConfirmThrottle:
         cache.set(self.ip_key(ip), ip_attempts + 1, timeout=self.lockout)
 
     def clear(self, token, ip):
-        # BUG WAS HERE: double underscore refresh_token__key
         cache.delete(self.token_key(token))
         cache.delete(self.ip_key(ip))
 
@@ -240,6 +230,5 @@ class ResetConfirmThrottle:
             return True, f"Too many attempts, try again in {mins}m {secs}s."
         if ip_attempts >= self.ip_max:
             mins, secs = _remaining_time(self.lockout, self.token_key(token), self.ip_key(ip))
-            # BUG WAS HERE: used undefined "email" variable instead of "token"
             return True, f"Too many attempts from this IP, try again in {mins}m {secs}s."
         return False, None
