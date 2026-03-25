@@ -514,7 +514,6 @@ class AccountDeletionRequestSerializer(serializers.Serializer):
     channel=serializers.ChoiceField(choices=["email","phone"])
     def validate(self,data):
         channel=data.get("channel")
-       
         request=self.context.get("request")
         user=request.user
         if channel=="email":
@@ -523,12 +522,7 @@ class AccountDeletionRequestSerializer(serializers.Serializer):
         elif channel == "phone":
             otp = Verification.generate_password_reset_otp(user, user.phone)
             send_otp_phone(user, otp)
-        
         return data
-        
-   
-     
-       
 class AccountDeletionConfirmSerializer(serializers.Serializer):
     channel=serializers.ChoiceField(choices=["email","phone"])
     otp=serializers.CharField(required=True)
@@ -539,7 +533,6 @@ class AccountDeletionConfirmSerializer(serializers.Serializer):
         user=request.user
         if not channel:
             raise serializers.ValidationError("Either email or phone must be provided")
-
         # Validate OTP
         if channel == "email":
             success, message = Verification.verify_password_reset_otp_email(otp, user)

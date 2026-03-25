@@ -103,7 +103,6 @@ class EmailResendView(APIView):
 # ── Login ──────────────────────────────────────────────────────────────────
 class LoginView(APIView):
     permission_classes = [AllowAny]
-
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={"request": request})
         try:
