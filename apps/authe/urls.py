@@ -2,17 +2,32 @@ from django.urls import path
 from apps.authe.views import( RegisterView, EmailVerificationView,
                              EmailResendView,LoginView,PasswordResendView,
                              PasswordResetConfirmView,PasswordOtpVerifyView,
-                             PasswordResetRequestView,ProfileView,CheckEmailView)
+                             PasswordResetRequestView,ProfileView,CheckEmailView,LogoutAllView,
+                             PasswordChangeVerifyView,PasswordChangeRequestView,
+                             AcountDeletionVerifyView,AcountDeletionRequestView,
+                             AcountDeactivationVerifyView,AcountDeactivationRequestView,
+                             ChangeEmailVerifyView,ChangeEmailRequestView,
+                              ChangePhoneVerifyView,ChangePhoneRequestView)
 urlpatterns = [
     path("register/",RegisterView.as_view()),
     path("login/",LoginView.as_view()),
-    path("email/verify/",EmailVerificationView.as_view()),
+    path("verify-email/",EmailVerificationView.as_view()),
     path("email/resend/",EmailResendView.as_view()),
     path("password-reset/request/",PasswordResetRequestView.as_view()),
     path("password-reset/verify-otp/",PasswordOtpVerifyView.as_view()),
     path("password-reset/confirm/",PasswordResetConfirmView.as_view()),
-    path("resendreset/",PasswordResendView.as_view()),
-    path("profile/view/",ProfileView.as_view()),
+    path("resend-reset-otp/",PasswordResendView.as_view()),
+    path("profile/change-password/request/",PasswordChangeRequestView.as_view(),name='password-cahnge-request'),
+    path("profile/change-password/confirm/",PasswordChangeVerifyView.as_view(),name="verify-password-change"),
+    path("profile/change-email/request/",ChangeEmailRequestView.as_view(),name="change-email-request"),
+    path("profile/change-email/confirm/",ChangeEmailVerifyView.as_view(),name="change-email-verify"),
+    path("profile/change-phone/request/",ChangePhoneRequestView.as_view(),name="change-phone-request"),
+    path('profile/change-phone/confirm/', ChangePhoneVerifyView.as_view(),name="change-phone-confirm"),
+    path("profile/deactivate/request/",AcountDeactivationRequestView.as_view(),name="deactivate-account-request"),
+    path("profile/deactivate/confirm/",AcountDeactivationVerifyView.as_view(),name="deactivate-account-confirm"),
+    path("profile/delete/request/",AcountDeletionRequestView.as_view(),name="delete-account-request"),
+    path("profile/delete/confirm/",AcountDeletionVerifyView.as_view(),name="delete-account-confirm"),
+    #path("profile/view/",ProfileView.as_view()),
     path("check/email/",CheckEmailView.as_view()),
-    #path("logout/all/",LogoutAllView.as_view())
+    path("logout/all/",LogoutAllView.as_view())
 ]

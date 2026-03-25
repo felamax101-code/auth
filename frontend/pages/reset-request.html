@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reset Password — Auth Tester</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<nav>
+  <a href="register.html" class="brand">// AUTH_TESTER</a>
+  <a href="register.html">Register</a>
+  <a href="login.html">Login</a>
+  <a href="verify-email.html">Verify Email</a>
+  <a href="reset-request.html">Reset PW</a>
+  <a href="profile.html">Profile</a>
+</nav>
+
+<div class="card">
+  <div class="card-title">Reset Password</div>
+  <div class="card-sub">POST /password-reset/request/</div>
+
+  <div class="alert" id="alert"></div>
+
+  <div class="field">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="user@example.com" />
+  </div>
+
+  <button class="btn btn-primary" id="btn">Send Reset Code</button>
+
+  <div class="response-box" id="response"></div>
+
+  <span class="link">
+    Got the code? <a href="reset-verify.html">Enter OTP →</a>
+  </span>
+  <span class="link"><a href="login.html">Back to Login</a></span>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  document.getElementById('btn').addEventListener('click', async () => {
+    const btn   = document.getElementById('btn');
+    const alert = document.getElementById('alert');
+    const res   = document.getElementById('response');
+
+    hideAlert(alert);
+    setLoading(btn, true);
+
+    const email = document.getElementById('email').value.trim();
+    const { ok, data } = await apiFetch('/password-reset/request/', {
+      method: 'POST',
+      body: { email },
+    });
+
+    setLoading(btn, false);
+    showResponse(res, data);
+
+    if (ok) {
+      sessionStorage.setItem('reset_email', email);
+      showAlert(alert, data.message || 'Check your email (or server console) for the OTP.', 'success');
+    } else {
+      showAlert(alert, flattenErrors(data), 'error');
+    }
+  });
+</script>
+</body>
+</html>

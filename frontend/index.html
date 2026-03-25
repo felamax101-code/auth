@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth Tester</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .index-card { max-width: 560px; }
+    .page-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+    .page-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .page-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0,255,136,0.04);
+    }
+    .page-link .method {
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .page-link:hover .method { color: var(--accent); opacity: 0.6; }
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .dot.online { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">// AUTH_TESTER</a>
+  <a href="pages/register.html">Register</a>
+  <a href="pages/login.html">Login</a>
+  <a href="pages/verify-email.html">Verify Email</a>
+  <a href="pages/reset-request.html">Reset PW</a>
+  <a href="pages/profile.html">Profile</a>
+</nav>
+
+<div class="card index-card">
+  <div class="card-title">Auth API Tester</div>
+  <div class="card-sub">Django REST Framework · SimpleJWT</div>
+
+  <div class="status-bar">
+    <div class="dot" id="dot"></div>
+    <span id="status-text">Checking API at http://127.0.0.1:8000…</span>
+  </div>
+
+  <div class="page-list">
+    <a class="page-link" href="pages/register.html">
+      <span>Register</span>
+      <span class="method">POST /register/</span>
+    </a>
+    <a class="page-link" href="pages/login.html">
+      <span>Login</span>
+      <span class="method">POST /login/</span>
+    </a>
+    <a class="page-link" href="pages/verify-email.html">
+      <span>Verify Email</span>
+      <span class="method">POST /verify-email/</span>
+    </a>
+    <a class="page-link" href="pages/reset-request.html">
+      <span>Password Reset — Request OTP</span>
+      <span class="method">POST /password-reset/request/</span>
+    </a>
+    <a class="page-link" href="pages/reset-verify.html">
+      <span>Password Reset — Verify OTP</span>
+      <span class="method">POST /password-reset/verify-otp/</span>
+    </a>
+    <a class="page-link" href="pages/reset-confirm.html">
+      <span>Password Reset — Set Password</span>
+      <span class="method">POST /password-reset/confirm/</span>
+    </a>
+    <a class="page-link" href="pages/profile.html">
+      <span>Profile View / Edit / Logout</span>
+      <span class="method">GET · PUT /profile/ · POST /logout-all/</span>
+    </a>
+  </div>
+</div>
+
+<script src="css/../js/utils.js"></script>
+<script>
+  // Quick ping to check if API is up
+  (async () => {
+    try {
+      const res = await fetch('https://smartcomm.pythonanywhere.com/api/auth/register/', {
+        method: 'OPTIONS',
+      });
+      document.getElementById('dot').classList.add('online');
+      document.getElementById('status-text').textContent =
+        `API online · http://127.0.0.1:8000 (${res.status})`;
+    } catch {
+      document.getElementById('status-text').textContent =
+        'API offline — make sure Django is running on port 8000';
+    }
+  })();
+</script>
+</body>
+</html>

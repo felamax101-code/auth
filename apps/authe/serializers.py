@@ -1,13 +1,11 @@
 import uuid
 from datetime import timedelta
-
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
-
 from apps.authe.throttles import (
     EmailVerificationThrottle,
     LoginThrottle,
@@ -17,10 +15,10 @@ from apps.authe.throttles import (
     VerifyThrottle,
     get_client_ip,
 )
-from apps.authe.utils import send_reset_otp_email
+from apps.authe.utils import send_otp_email, send_reset_otp_email,send_otp_phone
 from apps.authe.validators import EmailValidator, FlexibleUsernameValidator
 from apps.authe.verification import Verification
-
+from django.db import transaction
 User = get_user_model()
 
 
@@ -209,7 +207,7 @@ class PasswordResetOtpRequestSerializer(serializers.Serializer):
             data["user"] = None
             return data
 
-        otp = Verification.generate_password_reset_otp(email)
+        otp = Verification.generate_password_reset_otp_email(email)
         throttle.increment(email, ip)
         data["user"] = user
         data["otp"]  = otp
@@ -237,7 +235,7 @@ class PasswordOtpVerifySerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid email.")
 
-        success, message = Verification.verify_password_reset_otp(otp, user)
+        success, message = Verification.verify_password_reset_otp_email(otp, user)
         if not success:
             throttle.increment(email, ip)
             raise serializers.ValidationError(message)
@@ -317,38 +315,249 @@ class ProfileViewSerializer(serializers.ModelSerializer):
 
 
 # ── Profile Update ─────────────────────────────────────────────────────────
-class ProfileUpdateSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(required=False)
-    email    = serializers.EmailField(required=False)
+class ChangeEmailRequestSerializer(serializers.Serializer):
+    new_email = serializers.EmailField(required=True)
 
-    class Meta:
-        model  = User
-        fields = ["username", "email"]
-
-    def validate_email(self, value):
-        EmailValidator()(value)
-        # Make sure the new email isn't taken by another user
-        user = self.instance
-        if User.objects.exclude(pk=user.pk).filter(email=value).exists():
-            raise serializers.ValidationError("This email is already in use.")
+    def validate_new_email(self, value):
+        email=value.lower().strip()
+        #throttle=EmailVerificationThrottle()
+        request  = self.context.get("request")
+        user=self.context.get("request").user
+        #ip= get_client_ip(request)
+        #locked,message=throttle.is_locked(email,ip(self.context.get("request")))
+        #if locked:
+           # raise serializers.ValidationError(message)
+        #EmailValidator()(email)
+        with transaction.atomic():
+            
+            otp=Verification.generate_email_change_otp(user,email)
+            send_otp_email(user, otp)
+            #throttle.increment(email, ip)
         return value
-
-    def validate_username(self, value):
-        FlexibleUsernameValidator()(value)
-        return value
-
-    def update(self, instance, validated_data):
-        instance.username = validated_data.get("username", instance.username)
-        instance.email    = validated_data.get("email", instance.email)
-        instance.save()
-        return instance
-
-
-# ── Logout All Devices ─────────────────────────────────────────────────────
-class LogoutAllSerializer(serializers.Serializer):
+class ChangeEmailConfirmSerializer(serializers.Serializer):
+    new_email=serializers.EmailField(required=True)
+    otp=serializers.CharField(required=True,min_length=6,max_length=6)
+    def validate(self,data):
+        email=data.get("new_email").lower().strip()
+        otp=data.get("otp").strip()
+        throttle=EmailVerificationThrottle()
+        request=self.context.get("request")
+        #ip=get_client_ip(request)
+        #locked,message=throttle.is_locked(email,ip)
+        #if locked:
+         #   raise serializers.ValidationError(message)
+        user=request.user
+        success,message=Verification.validate_email_change_otp(otp,user)
+        if not success:
+         #   throttle.increment(email, ip)
+            raise serializers.ValidationError(message)
+        data["user"]=user
+        return data
     def save(self):
-        user   = self.context.get("request").user
-        tokens = OutstandingToken.objects.filter(user=user)
+        request=self.context.get("request")
+        #ip=get_client_ip(request)
+        user=self.validated_data["user"]
+        new_email=self.validated_data["new_email"].lower().strip()
+        user.email=new_email
+        user.is_email_verified=True
+        #throttle=EmailVerificationThrottle()
+        #throttle.clear(email=new_email,ip=ip)
+        user.save() 
+class ChangePhoneRequestSerializer(serializers.Serializer):
+    phone=serializers.CharField(required=True)
+    def validate_phone(self,value):
+        phone=value.strip()
+        request=self.context.get("request")
+        user=request.user
+        #ip=get_client_ip(request)
+        #throttle=PhoneVerificationThrottle()
+        #
+        with transaction.atomic():
+            
+            otp=Verification.generate_password_reset_otp(user,phone)
+            send_otp_phone(user, otp)
+            #throttle.increment(phone, ip)
+        return value
+class ChangePhoneConfirmSerializer(serializers.Serializer):
+    phone=serializers.CharField(required=True)
+    otp=serializers.CharField(required=True,min_length=6,max_length=6)
+    def validate(self,data):
+        phone=data.get("phone").strip()
+        otp=data.get("otp").strip()
+        #throttle=PhoneVerificationThrottle()
+        request=self.context.get("request")
+        #ip=get_client_ip(request)
+        # locked,message=throttle.is_locked(phone,ip)
+        # if locked:
+        #     raise serializers.ValidationError(message)
+        user=request.user
+        success,message=Verification.verify_password_reset_otp_phone(otp,user)
+        if not success:
+            #throttle.increment(phone, ip)
+            raise serializers.ValidationError(message)
+        data["user"]=user
+        return data
+    def save(self):
+        request=self.context.get("request")
+        #ip=get_client_ip(request)
+        user=self.validated_data["user"]
+        new_phone=self.validated_data["phone"].strip()
+        user.phone=new_phone
+        user.is_phone_verified=True
+        # throttle=PhoneVerificationThrottle()
+        # throttle.clear(phone=new_phone,ip=ip)
+        user.save()
+        return user
+class PasswordChangeRequestSerializer(serializers.Serializer):
+    channel = serializers.ChoiceField(choices=["email", "phone"])
+
+    def validate(self, data):
+        request = self.context.get("request")
+        user = request.user
+        channel = data.get("channel")
+
+        if channel == "email":
+            otp = Verification.generate_password_reset_otp_email(user.email)
+            send_otp_email(user, otp)
+
+        elif channel == "phone":
+            otp = Verification.generate_password_change_otp_phone(user, user.phone)
+            send_otp_sms(user, otp)
+
+        data["user"] = user
+        return data
+         
+class PasswordChangeConfirmSerializer(serializers.Serializer):
+    channel = serializers.ChoiceField(choices=["email", "phone"])
+    otp = serializers.CharField(required=True)
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        user = self.context['request'].user
+        channel = data.get('channel')
+        otp = data.get('otp').strip()
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+
+        # Validate channel
+        if not channel:
+            raise serializers.ValidationError("Either email or phone must be provided")
+
+        # Validate OTP
+        if channel == "email":
+            success, message = Verification.verify_password_reset_otp_email(otp, user)
+        else:  # phone
+            success, message = Verification.verify_password_reset_otp_phone(otp, user)
+
+        if not success:
+            raise serializers.ValidationError({"otp": message})
+
+        # Validate current password
+        if not user.check_password(current_password):
+            raise serializers.ValidationError({"current_password": "Current password is incorrect"})
+
+        # Store validated data to use in save()
+        data['user'] = user
+        return data
+
+    def save(self):
+        """
+        Actually updates the user's password
+        """
+        user = self.validated_data['user']
+        new_password = self.validated_data['new_password']
+        user.set_password(new_password)
+        user.save()
+        return user
+class AccountDeactivationRequestSerializer(serializers.Serializer):
+    channel=serializers.ChoiceField(choices=["email","phone"])
+    def validate(self,data):
+        channel=data.get("channel")
+       
+        request=self.context.get("request")
+        user=request.user
+        if channel=="email":
+            otp=Verification.generate_password_reset_otp_email(user.email)
+            send_otp_email(user, otp)
+        elif channel == "phone":
+            otp = Verification.generate_password_change_otp_phone(user, user.phone)
+            send_otp_sms(user, otp)
+        
+        return data
+        
+class AccountDeactivationConfirmSerializer(serializers.Serializer):
+    channel=serializers.ChoiceField(choices=["email","phone"])
+    otp=serializers.CharField(required=True)
+    def validate(self,data):
+        channel=data.get('channel')
+        otp=data.get("otp").strip()
+        request=self.context.get("request")
+        user=request.user
+        if not channel:
+            raise serializers.ValidationError("Either email or phone must be provided")
+
+        # Validate OTP
+        if channel == "email":
+            success, message = Verification.verify_password_reset_otp_email(otp, user)
+        else:  # phone
+            success, message = Verification.verify_password_reset_otp_phone(otp, user)
+
+        if not success:
+            raise serializers.ValidationError({"otp": message})
+        
+        
+        user.is_deactivated=True
+        user.save()
+        return data
+class AccountDeletionRequestSerializer(serializers.Serializer):
+    channel=serializers.ChoiceField(choices=["email","phone"])
+    def validate(self,data):
+        channel=data.get("channel")
+       
+        request=self.context.get("request")
+        user=request.user
+        if channel=="email":
+            otp=Verification.generate_password_reset_otp_email(user.email)
+            send_otp_email(user, otp)
+        elif channel == "phone":
+            otp = Verification.generate_password_reset_otp(user, user.phone)
+            send_otp_phone(user, otp)
+        
+        return data
+        
+   
+     
+       
+class AccountDeletionConfirmSerializer(serializers.Serializer):
+    channel=serializers.ChoiceField(choices=["email","phone"])
+    otp=serializers.CharField(required=True)
+    def validate(self,data):
+        channel=data.get('channel')
+        otp=data.get("otp").strip()
+        request=self.context.get("request")
+        user=request.user
+        if not channel:
+            raise serializers.ValidationError("Either email or phone must be provided")
+
+        # Validate OTP
+        if channel == "email":
+            success, message = Verification.verify_password_reset_otp_email(otp, user)
+        else:  # phone
+            success, message = Verification.verify_password_reset_otp_phone(otp, user)
+
+        if not success:
+            raise serializers.ValidationError({"otp": message})
+        user.is_active=False
+        user.is_deactivated=True
+        user.save()
+        return data
+       
+class LogoutAllSerializer(serializers.Serializer):
+    def save(self, **kwargs):
+        request=self.context.get("request")
+        user=request.user
+        tokens=OutstandingToken.objects.filter(user=user)
         for token in tokens:
             BlacklistedToken.objects.get_or_create(token=token)
-        return True
+        

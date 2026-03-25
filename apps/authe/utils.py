@@ -131,16 +131,16 @@ def send_reset_otp_email(email, otp, username=''):
         send_email_sync(subject, html_message, [email])
 def send_otp_phone(phone,otp):
     if settings.DEBUG:
-        prinf(f"sms to {phone} OTP: {otp}")
-    client=Client(
-        settings.TWILIO_ACCOUNT_SID,
-        settings.TWILIO_AUTH_TOKEN
-    )
-    client.messages.create(
-        body=f"Your verification code is: {otp}",
-        from_=settings.TWILIO_PHONE_NUMBER,
-        to=phone
-    )
+        print(f"sms to {phone} OTP: {otp}")
+    # client=Client(
+    #     settings.TWILIO_ACCOUNT_SID,
+    #     settings.TWILIO_AUTH_TOKEN
+    # )
+    # client.messages.create(
+    #     body=f"Your verification code is: {otp}",
+    #     from_=settings.TWILIO_PHONE_NUMBER,
+    #     to=phone
+    # )
 def send_password_reset_email(email, token):
     """Send password reset link"""
     reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"

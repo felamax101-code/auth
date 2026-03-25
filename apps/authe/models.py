@@ -35,6 +35,9 @@ class CustomUser(AbstractBaseUser,PermissionsMixin):
     phone=models.CharField(blank=True,null=True)
     created_at=models.DateTimeField(auto_now_add=True)
     role=models.CharField(choices=ROLECHOICES,blank=True,null=True,default="client")
+    bio=models.TextField(blank=True,null=True)
+    
+   
     
     failed_attempts=models.PositiveIntegerField(default=0)
     number_of_logins=models.PositiveIntegerField(default=True)
@@ -68,7 +71,8 @@ class CustomUser(AbstractBaseUser,PermissionsMixin):
     objects = UserManager()
     def __str__(self):
         return self.email
-    
+
+
     
     
     

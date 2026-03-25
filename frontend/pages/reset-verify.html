@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify Reset OTP — Auth Tester</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<nav>
+  <a href="register.html" class="brand">// AUTH_TESTER</a>
+  <a href="register.html">Register</a>
+  <a href="login.html">Login</a>
+  <a href="verify-email.html">Verify Email</a>
+  <a href="reset-request.html">Reset PW</a>
+  <a href="profile.html">Profile</a>
+</nav>
+
+<div class="card">
+  <div class="card-title">Enter Reset OTP</div>
+  <div class="card-sub">POST /password-reset/verify-otp/</div>
+
+  <div class="alert" id="alert"></div>
+
+  <div class="field">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="user@example.com" />
+  </div>
+
+  <label style="text-align:center; display:block; margin-bottom:0.25rem;">OTP Code</label>
+  <div class="otp-group">
+    <input type="text" maxlength="1" class="otp-char" inputmode="text" />
+    <input type="text" maxlength="1" class="otp-char" inputmode="text" />
+    <input type="text" maxlength="1" class="otp-char" inputmode="text" />
+    <input type="text" maxlength="1" class="otp-char" inputmode="text" />
+    <input type="text" maxlength="1" class="otp-char" inputmode="text" />
+    <input type="text" maxlength="1" class="otp-char" inputmode="text" />
+  </div>
+
+  <button class="btn btn-primary" id="btn">Verify OTP</button>
+  <button class="btn btn-ghost" id="resend-btn">Resend Code</button>
+
+  <div class="token-badge" id="reset-token-badge">
+    <span class="token-label">Reset Token (saved automatically)</span>
+    <span id="reset-token-val"></span>
+  </div>
+
+  <div class="response-box" id="response"></div>
+
+  <span class="link">
+    Verified? <a href="reset-confirm.html">Set new password →</a>
+  </span>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  const savedEmail = sessionStorage.getItem('reset_email');
+  if (savedEmail) document.getElementById('email').value = savedEmail;
+
+  const otpInputs = document.querySelectorAll('.otp-char');
+  otpInputs.forEach((input, i) => {
+    input.addEventListener('input', e => {
+      const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      e.target.value = val.slice(-1);
+      if (val && i < otpInputs.length - 1) otpInputs[i + 1].focus();
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !input.value && i > 0) otpInputs[i - 1].focus();
+    });
+    input.addEventListener('paste', e => {
+      e.preventDefault();
+      const pasted = (e.clipboardData.getData('text') || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
+      otpInputs.forEach((inp, idx) => { inp.value = pasted[idx] || ''; });
+      otpInputs[Math.min(pasted.length, otpInputs.length - 1)].focus();
+    });
+  });
+
+  function getOTP() {
+    return Array.from(otpInputs).map(i => i.value).join('');
+  }
+
+  document.getElementById('btn').addEventListener('click', async () => {
+    const btn   = document.getElementById('btn');
+    const alert = document.getElementById('alert');
+    const res   = document.getElementById('response');
+
+    hideAlert(alert);
+    setLoading(btn, true);
+
+    const body = {
+      email: document.getElementById('email').value.trim(),
+      otp:   getOTP(),
+    };
+
+    const { ok, data } = await apiFetch('/password-reset/verify-otp/', { method: 'POST', body });
+
+    setLoading(btn, false);
+    showResponse(res, data);
+
+    if (ok) {
+      Auth.setResetToken(data.reset_token);
+      document.getElementById('reset-token-val').textContent = data.reset_token;
+      document.getElementById('reset-token-badge').classList.add('show');
+      showAlert(alert, 'OTP verified. Proceed to set your new password.', 'success');
+    } else {
+      showAlert(alert, flattenErrors(data), 'error');
+    }
+  });
+
+  document.getElementById('resend-btn').addEventListener('click', async () => {
+    const btn   = document.getElementById('resend-btn');
+    const alert = document.getElementById('alert');
+    const res   = document.getElementById('response');
+
+    hideAlert(alert);
+    setLoading(btn, true);
+
+    const { ok, data } = await apiFetch('/password-reset/resend/', {
+      method: 'POST',
+      body: { email: document.getElementById('email').value.trim() },
+    });
+
+    setLoading(btn, false);
+    showResponse(res, data);
+
+    if (ok) {
+      showAlert(alert, 'New code sent.', 'info');
+    } else {
+      showAlert(alert, flattenErrors(data), 'error');
+    }
+  });
+</script>
+</body>
+</html>

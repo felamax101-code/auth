@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Blog</title>
+    <link rel="stylesheet"href="style.css">
+</head>
+<body>
+
+    <div id="posts-container"></div>
+
+    <script>
+        const API = 'http://127.0.0.1:8000/api/blog'
+
+        // ── Load Posts ─────────────────────────────────────────────────
+        async function loadPosts() {
+            const container = document.getElementById('posts-container')
+
+            container.innerHTML = '<p>Loading posts...</p>'
+
+            try {
+                const response = await fetch(`${API}/posts/`)
+                const posts    = await response.json()
+
+                if (posts.length === 0) {
+                    container.innerHTML = '<p>No posts yet.</p>'
+                    return
+                }
+
+                // build all HTML first then set once — no flashing
+                let html = ''
+                posts.forEach(post => {
+                    html += `
+                        <div class="post-card" data-post-id="${post.id}">
+                            <h2 class="post-title">${post.title}</h2>
+                            <p class="post-content">${post.content}</p>
+                            <button class="like-btn">
+                                ❤️ <span class="like-count">${post.likes_count}</span> Likes
+                            </button>
+                        </div>
+                    `
+                })
+                container.innerHTML = html
+
+            } catch (error) {
+                container.innerHTML = '<p>Failed to load posts.</p>'
+                console.error(error)
+            }
+        }
+
+        // ── Like Button ────────────────────────────────────────────────
+        document.getElementById('posts-container').addEventListener('click', function(event) {
+
+            const btn = event.target.closest('.like-btn')
+            if (!btn) return
+
+            const postCard = btn.closest('.post-card')
+            const postId   = postCard.dataset.postId
+
+            // get or create session id for this browser
+            let sessionId = localStorage.getItem('session_id')
+            if (!sessionId) {
+                sessionId = crypto.randomUUID()
+                localStorage.setItem('session_id', sessionId)
+            }
+
+            fetch(`${API}/posts/like/`, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({
+                    post_id:    postId,
+                    session_id: sessionId
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const countSpan      = btn.querySelector('.like-count')
+                countSpan.textContent = data.likes
+
+                if (data.liked) {
+                    btn.style.color = 'red'
+                } else {
+                    btn.style.color = ''
+                }
+            })
+            .catch(err => console.error(err))
+        })
+
+        // ── Start ──────────────────────────────────────────────────────
+        loadPosts()
+
+    </script>
+
+</body>
+</html>

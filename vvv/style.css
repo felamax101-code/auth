@@ -1,0 +1,61 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ── Page ─────────────────────────────────────────────────────── */
+body {
+    background-color: #f4f4f4;
+    font-family: Arial, sans-serif;
+    padding: 2rem;
+}
+
+/* ── Posts container ──────────────────────────────────────────── */
+#posts-container {
+    max-width: 700px;
+    margin: 0 auto;        /* center on page */
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;           /* space between cards */
+}
+
+/* ── Post card ────────────────────────────────────────────────── */
+.post-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* ── Post title ───────────────────────────────────────────────── */
+.post-title {
+    font-size: 1.3rem;
+    color: #222;
+    margin-bottom: 0.5rem;
+}
+
+/* ── Post content ─────────────────────────────────────────────── */
+.post-content {
+    font-size: 0.95rem;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+/* ── Like button ──────────────────────────────────────────────── */
+.like-btn {
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.like-btn:hover {
+    background: #fff0f0;
+    border-color: red;
+    color: red;
+}

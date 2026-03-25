@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Auth Tester</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<nav>
+  <a href="register.html" class="brand">// AUTH_TESTER</a>
+  <a href="register.html">Register</a>
+  <a href="login.html">Login</a>
+  <a href="verify-email.html">Verify Email</a>
+  <a href="reset-request.html">Reset PW</a>
+  <a href="profile.html">Profile</a>
+</nav>
+
+<div class="card">
+  <div class="card-title">Login</div>
+  <div class="card-sub">POST /login/</div>
+
+  <div class="alert" id="alert"></div>
+
+  <div class="field">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="user@example.com" />
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="••••••••" />
+  </div>
+
+  <button class="btn btn-primary" id="btn">Login</button>
+
+  <div class="token-badge" id="token-access">
+    <span class="token-label">Access Token</span>
+    <span id="access-val"></span>
+  </div>
+  <div class="token-badge" id="token-refresh">
+    <span class="token-label">Refresh Token</span>
+    <span id="refresh-val"></span>
+  </div>
+
+  <div class="response-box" id="response"></div>
+
+  <span class="link">No account? <a href="register.html">Register</a></span>
+  <span class="link"><a href="reset-request.html">Forgot password?</a></span>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  document.getElementById('btn').addEventListener('click', async () => {
+    const btn   = document.getElementById('btn');
+    const alert = document.getElementById('alert');
+    const res   = document.getElementById('response');
+
+    hideAlert(alert);
+    setLoading(btn, true);
+
+    const body = {
+      email:    document.getElementById('email').value.trim(),
+      password: document.getElementById('password').value,
+    };
+
+    const { ok, data } = await apiFetch('/login/', { method: 'POST', body });
+
+    setLoading(btn, false);
+    showResponse(res, data);
+
+    if (ok) {
+      Auth.setTokens(data.tokens.access, data.tokens.refresh);
+      document.getElementById('access-val').textContent  = data.tokens.access;
+      document.getElementById('refresh-val').textContent = data.tokens.refresh;
+      document.getElementById('token-access').classList.add('show');
+      document.getElementById('token-refresh').classList.add('show');
+      showAlert(alert, `Logged in as ${data.user.username}`, 'success');
+    } else {
+      showAlert(alert, flattenErrors(data), 'error');
+    }
+  });
+</script>
+</body>
+</html>

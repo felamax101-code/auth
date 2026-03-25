@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Set New Password — Auth Tester</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<nav>
+  <a href="register.html" class="brand">// AUTH_TESTER</a>
+  <a href="register.html">Register</a>
+  <a href="login.html">Login</a>
+  <a href="verify-email.html">Verify Email</a>
+  <a href="reset-request.html">Reset PW</a>
+  <a href="profile.html">Profile</a>
+</nav>
+
+<div class="card">
+  <div class="card-title">New Password</div>
+  <div class="card-sub">POST /password-reset/confirm/</div>
+
+  <div class="alert" id="alert"></div>
+
+  <div class="field">
+    <label>Reset Token</label>
+    <input type="text" id="token" placeholder="Paste token or auto-filled from previous step" />
+  </div>
+  <div class="field">
+    <label>New Password</label>
+    <input type="password" id="password" placeholder="••••••••" />
+  </div>
+  <div class="field">
+    <label>Confirm Password</label>
+    <input type="password" id="password_confirm" placeholder="••••••••" />
+  </div>
+
+  <button class="btn btn-primary" id="btn">Set New Password</button>
+
+  <div class="response-box" id="response"></div>
+
+  <span class="link">Done? <a href="login.html">Login →</a></span>
+</div>
+
+<script src="../js/utils.js"></script>
+<script>
+  // Auto-fill token from previous step
+  const savedToken = Auth.getResetToken();
+  if (savedToken) document.getElementById('token').value = savedToken;
+
+  document.getElementById('btn').addEventListener('click', async () => {
+    const btn   = document.getElementById('btn');
+    const alert = document.getElementById('alert');
+    const res   = document.getElementById('response');
+
+    hideAlert(alert);
+    setLoading(btn, true);
+
+    const body = {
+      token:            document.getElementById('token').value.trim(),
+      password:         document.getElementById('password').value,
+      password_confirm: document.getElementById('password_confirm').value,
+    };
+
+    const { ok, data } = await apiFetch('/password-reset/confirm/', { method: 'POST', body });
+
+    setLoading(btn, false);
+    showResponse(res, data);
+
+    if (ok) {
+      showAlert(alert, 'Password changed successfully! You can now log in.', 'success');
+      sessionStorage.removeItem('reset_token');
+    } else {
+      showAlert(alert, flattenErrors(data), 'error');
+    }
+  });
+</script>
+</body>
+</html>

@@ -21,9 +21,13 @@ from apps.authe.serializers import (
     PasswordOtpVerifySerializer,
     PasswordResetOtpRequestSerializer,
     PasswordResetSerializer,
-    ProfileUpdateSerializer,
     ProfileViewSerializer,
-    RegisterSerializer,
+    RegisterSerializer,AccountDeactivationConfirmSerializer,
+    AccountDeactivationRequestSerializer,AccountDeletionConfirmSerializer
+    ,AccountDeletionRequestSerializer,ChangeEmailConfirmSerializer,
+    ChangeEmailRequestSerializer,ChangePhoneConfirmSerializer,
+    ChangePhoneRequestSerializer,PasswordChangeConfirmSerializer,
+    PasswordChangeRequestSerializer
 )
 from apps.authe.utils import send_otp_email, send_reset_otp_email
 from apps.authe.verification import Verification
@@ -252,21 +256,141 @@ class ProfileView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response({"message": "Profile updated successfully."}, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.exception("ProfileView PUT error")
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class ChangeEmailRequestView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        serializer = ChangeEmailRequestSerializer(data=request.data,context={'request':request})
+        try:
+            if serializer.is_valid():
+                # user = serializer.validated_data["user"]
+                return Response({"message": "Verification code sent to  email."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("ChangeEmailRequestView error")
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class ChangeEmailVerifyView(APIView):
+    permission_classes = [IsAuthenticated]
 
-# ── Logout All Devices ─────────────────────────────────────────────────────
+    def post(self, request):
+        serializer = ChangeEmailConfirmSerializer(data=request.data, context={"request": request})
+        try:
+            if serializer.is_valid():
+                return Response({"message": "Email verified."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("ChangeEmailVerifyView error")
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class ChangePhoneRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer = ChangePhoneRequestSerializer(data=request.data,context={"request": request})
+        try:
+            if serializer.is_valid():
+                #user = serializer.validated_data["user"]
+                return Response({"message": "Verification code sent to this phone number."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("ChangePhoneRequestView error")
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class ChangePhoneVerifyView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer = ChangePhoneConfirmSerializer(data=request.data, context={"request": request})
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "Current phone number verified."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("ChangePhoneVerifyView error")
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+   
+class PasswordChangeRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer=PasswordChangeRequestSerializer(data=request.data,context={"request":request})
+        try:
+            if serializer.is_valid():
+                return Response({"message": "Verification code sent to your email."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("PasswordChangeRequestView error")
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class PasswordChangeVerifyView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer=PasswordChangeConfirmSerializer(data=request.data,context={"request":request})
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "Password Changed successfully."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("PasswordChangeVerifyView error")
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class AcountDeactivationRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer=AccountDeactivationRequestSerializer(data=request.data,context={"request":request})
+        try:
+            if serializer.is_valid():
+                return Response({"message": "Verification code sent to your email."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("AcountDeactivationRequestView error")
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class AcountDeactivationVerifyView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer=AccountDeactivationConfirmSerializer(data=request.data,context={"request":request})
+        try:
+            if serializer.is_valid():
+                #serializer.save()
+                return Response({"message": "Account Deactivated successfully."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("AcountDeactivationVerifyView error")
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class AcountDeletionRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer=AccountDeletionRequestSerializer(data=request.data,context={"request":request})
+        try:
+            if serializer.is_valid():
+                return Response({"message": "Verification code sent to your email."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("AcountDeletionRequestView error")
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class AcountDeletionVerifyView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer=AccountDeletionConfirmSerializer(data=request.data,context={"request":request})
+        try:
+            if serializer.is_valid():
+                return Response({"message": "Account Deleted successfully."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("AcountDeletionVerifyView error")
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# ── Logout All Devices ───────────────────────────
 class LogoutAllView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = LogoutAllSerializer(context={"request": request})
+        serializer = LogoutAllSerializer(data=request.data, context={"request": request})
         try:
-            serializer.save()
-            return Response({"message": "Logged out from all devices."}, status=status.HTTP_200_OK)
+            if serializer.is_valid():
+                return Response({"message": "Logged out from all devices successfully."}, status=status.HTTP_200_OK)
+            return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.exception("LogoutAllView error")
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+   
